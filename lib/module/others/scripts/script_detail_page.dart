@@ -25,6 +25,7 @@ import '../../code_editor/codemirror/io.dart';
 import '../../code_editor/editor.dart';
 import '../../config/config_detail_page.dart';
 import '../../home/system_bean.dart';
+import 'script_history_page.dart';
 import 'script_upload_page.dart';
 
 class ScriptDetailPage extends ConsumerStatefulWidget {
@@ -125,6 +126,26 @@ class _ScriptDetailPageState extends ConsumerState<ScriptDetailPage> with LazyLo
                 setState(() {});
               }
             });
+          },
+        ),
+        addDivider(),
+        CupertinoSheer(
+          title: "编辑历史",
+          onTap: () async {
+            // 青龙 2.23+ 才有这三个接口；老服务端会返回 404，页面里会显示原因
+            final bool? changed = await Navigator.of(context).push<bool>(
+              CupertinoPageRoute(
+                builder: (context) => ScriptHistoryPage(
+                  title: widget.title,
+                  path: widget.path,
+                ),
+              ),
+            );
+            if (changed == true) {
+              // 回滚过：重新读取内容并同步给编辑器
+              await loadData();
+              controller?.setValue(content ?? "");
+            }
           },
         ),
         addDivider(),

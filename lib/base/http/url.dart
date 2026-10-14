@@ -96,6 +96,17 @@ class Url {
 
   get configsDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/configs/detail" : "/api/configs/detail";
 
+  // ── 脚本编辑历史（青龙 2.23+，需 scripts 权限）──
+  // ⚠️ 参数名是 `filename`，而读内容的 /scripts/detail 用的是 `file`（服务端命名不一致）
+  get scriptHistory =>
+      getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts/history" : "/api/scripts/history";
+
+  get scriptHistoryDetail =>
+      getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts/history/detail" : "/api/scripts/history/detail";
+
+  get scriptHistoryRestore =>
+      getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts/history/restore" : "/api/scripts/history/restore";
+
   // /api/system/log/remove 已被移除：频率改读系统配置、改走 config/log-remove-frequency
   get systemConfig => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/config" : "/api/system/config";
 

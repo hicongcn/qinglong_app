@@ -38,6 +38,10 @@ void main() {
   /// 运行中任务的日志文件内容（测试里可以追加，模拟任务持续输出）
   String logBody = "";
 
+  /// /api/scripts/history/restore 的 mock 行为：ok=可回滚 / conflict=文件已变化(409)
+  String restoreMode = "ok";
+  late List<String> restoreBodies;
+
   setUpAll(() async {
     // flutter_test 默认拦截网络（一律返回 400），这里放行，改用本机 mock 服务
     HttpOverrides.global = null;
@@ -95,6 +99,67 @@ void main() {
             "truncated": false,
           });
           return;
+        // 脚本编辑历史（青龙 2.23+，需 scripts 权限）
+        // 注意参数名是 filename，而 /scripts/detail 用的是 file
+        case "/api/scripts/history":
+          _send(req, {
+            "code": 200,
+            "data": {
+              "versions": [
+                {
+                  "id": "11111111-2222-3333-4444-555555555555",
+                  "createdAt": "2026-10-14T07:00:00.000Z",
+                  "source": "save",
+                  "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "size": 15,
+                  "identical": false,
+                },
+                {
+                  "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                  "createdAt": "2026-10-13T07:00:00.000Z",
+                  "source": "baseline",
+                  "hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "size": 14,
+                  "identical": true,
+                },
+              ],
+              "currentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "limit": 20,
+            },
+          });
+          return;
+        case "/api/scripts/history/detail":
+          _send(req, {
+            "code": 200,
+            "data": {
+              "version": {
+                "id": uri.queryParameters['id'],
+                "createdAt": "2026-10-14T07:00:00.000Z",
+                "source": "save",
+                "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "content": "console.log(1);",
+              },
+              "current": "console.log(2);",
+              "currentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            },
+          });
+          return;
+        case "/api/scripts/history/restore":
+          restoreBodies.add(body);
+          if (restoreMode == "conflict") {
+            _sendRaw(
+              req,
+              409,
+              jsonEncode({"code": 409, "message": "文件已变化，请刷新历史版本后重试"}),
+            );
+          } else {
+            _send(req, {
+              "code": 200,
+              "data": {"changed": true, "historyRecorded": true},
+            });
+          }
+          return;
+
         case "/api/scripts/detail":
           _send(req, {"code": 200, "data": "SCRIPT-BODY"});
           return;
@@ -184,6 +249,8 @@ void main() {
     initBodies = <String>[];
     initMode = "ok";
     logBody = "";
+    restoreBodies = <String>[];
+    restoreMode = "ok";
     final getIt = GetIt.instance;
     // get_it 7.x 的 reset() 是异步的（要等 dispose 完成才真正清空），
     // 不 await 会把下面刚注册的实例又清掉。
@@ -339,6 +406,83 @@ void main() {
   test("初始化接口必须在免登录白名单里（未初始化时还没有 token）", () {
     expect(Url.inWhiteList(Url.initUser), isTrue);
     expect(Url.inLoginList(Url.initUser), isTrue);
+  });
+
+  test("脚本历史：列表解析出 versions（source/size/identical），且用 filename 参数", () async {
+    final api = Api(0);
+    final res = await api.scriptHistoryList("demo.js", "");
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(res.bean?.limit, 20);
+    expect(res.bean?.currentHash, "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
+    expect(res.bean?.versions?.length, 2);
+
+    final v = res.bean!.versions!.first;
+    expect(v.id, "11111111-2222-3333-4444-555555555555");
+    expect(v.source, "save");
+    expect(v.sourceLabel, "保存");
+    expect(v.size, 15);
+    expect(v.sizeLabel, "15 B");
+    expect(v.identical, isFalse);
+    expect(v.content, isNull, reason: "列表接口不返回 content，只给 size/identical");
+
+    expect(requests.single, startsWith("GET /api/scripts/history"));
+    expect(requests.single, contains("filename=demo.js"));
+  });
+
+  test("脚本历史：详情返回选中版本内容 + 当前内容 + currentHash", () async {
+    final api = Api(0);
+    final res = await api.scriptHistoryDetail(
+      "demo.js",
+      "",
+      "11111111-2222-3333-4444-555555555555",
+    );
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(res.bean?.version?.content, "console.log(1);");
+    expect(res.bean?.current, "console.log(2);");
+    expect(res.bean?.currentHash, "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        reason: "回滚时必须把它原样回传，服务端据此判断文件是否被改过");
+
+    expect(requests.single, startsWith("GET /api/scripts/history/detail"));
+    expect(requests.single, contains("id=11111111-2222-3333-4444-555555555555"));
+    expect(requests.single, contains("filename=demo.js"),
+        reason: "history 系列是 filename，不是 /scripts/detail 的 file");
+  });
+
+  test("脚本历史：回滚的 body 必须带 filename/path/id/expectedHash", () async {
+    final api = Api(0);
+    final res = await api.scriptHistoryRestore(
+      "demo.js",
+      "",
+      "11111111-2222-3333-4444-555555555555",
+      "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    );
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(requests.single, startsWith("PUT /api/scripts/history/restore"));
+
+    final sent = jsonDecode(restoreBodies.single) as Map<String, dynamic>;
+    expect(sent["filename"], "demo.js");
+    expect(sent["path"], "");
+    expect(sent["id"], "11111111-2222-3333-4444-555555555555");
+    expect(sent["expectedHash"], "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
+  });
+
+  test("脚本历史：文件已变化时服务端回 409，客户端要拿到中文提示", () async {
+    restoreMode = "conflict";
+    final api = Api(0);
+    final res = await api.scriptHistoryRestore(
+      "demo.js",
+      "",
+      "11111111-2222-3333-4444-555555555555",
+      "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    );
+
+    expect(res.success, isFalse);
+    expect(res.code, 409,
+        reason: "这三个接口用的是真实 HTTP 状态码，而不是惯例的 200 + body code");
+    expect(res.message, contains("文件已变化"));
   });
 
   test("任务列表：解开 data.data 双层包装，且只传 searchValue", () async {

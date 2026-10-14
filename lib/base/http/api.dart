@@ -9,6 +9,7 @@ import 'package:qinglong_app/module/login/user_bean.dart';
 import 'package:qinglong_app/module/others/LogDelBean.dart';
 import 'package:qinglong_app/module/others/dependencies/dependency_bean.dart';
 import 'package:qinglong_app/module/others/login_log/login_log_bean.dart';
+import 'package:qinglong_app/module/others/scripts/script_history_bean.dart';
 import 'package:qinglong_app/module/others/task_log/task_log_bean.dart';
 import 'package:qinglong_app/module/others/update/check_update_bean.dart';
 import 'package:qinglong_app/module/task/intime_log/intime_log_chunk.dart';
@@ -494,6 +495,64 @@ class Api {
       {
         "file": name,
         "path": path ?? "",
+      },
+    );
+  }
+
+  // ── 脚本编辑历史（青龙 2.23+，需 scripts 权限）──
+  // 服务端实现：back/shared/scriptHistory.ts
+  // ⚠️ 这三个接口的参数名是 `filename`（不是 `file`）；出错时返回真实 HTTP 状态码
+  //    （404 版本不存在 / 409 文件已变化 / 413 超 1 MiB 或非 UTF-8），
+  //    HTTP 层会把响应体里的 message 原样带出来。
+
+  /// 历史版本列表（按时间倒序）
+  Future<HttpResponse<ScriptHistoryListBean>> scriptHistoryList(
+    String filename,
+    String? path,
+  ) async {
+    return await getIt<Http>(instanceName: index.toString()).get<ScriptHistoryListBean>(
+      getIt<Url>(instanceName: index.toString()).scriptHistory,
+      {
+        "filename": filename,
+        "path": path ?? "",
+      },
+    );
+  }
+
+  /// 某个历史版本的详情（含完整内容），同时回传服务端当前内容与 currentHash
+  Future<HttpResponse<ScriptHistoryDetailBean>> scriptHistoryDetail(
+    String filename,
+    String? path,
+    String id,
+  ) async {
+    return await getIt<Http>(instanceName: index.toString()).get<ScriptHistoryDetailBean>(
+      getIt<Url>(instanceName: index.toString()).scriptHistoryDetail,
+      {
+        "filename": filename,
+        "path": path ?? "",
+        "id": id,
+      },
+    );
+  }
+
+  /// 回滚到某个历史版本。
+  ///
+  /// `expectedHash` 必须原样回传 detail 给出的 `currentHash`：若期间文件已被改动，
+  /// 服务端返回 **409**（它会先备份当前内容再覆盖，所以不会丢东西）。
+  /// 遇到 409 要重新拉详情让用户确认，**不要自动重试**。
+  Future<HttpResponse<NullResponse>> scriptHistoryRestore(
+    String filename,
+    String? path,
+    String id,
+    String expectedHash,
+  ) async {
+    return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
+      getIt<Url>(instanceName: index.toString()).scriptHistoryRestore,
+      {
+        "filename": filename,
+        "path": path ?? "",
+        "id": id,
+        "expectedHash": expectedHash,
       },
     );
   }
