@@ -208,6 +208,12 @@ class HomePageState extends ConsumerState<HomePage> {
   GlobalKey<EnvPageState> envKey = GlobalKey();
   GlobalKey<OtherPageState> meKey = GlobalKey();
 
+  /// 已访问过的 tab 下标。首次点开才构建对应页面 —— 原来 4 个 tab 会在
+  /// App 启动时同时构建并各自发起首屏请求（任务/环境变量/配置文件/我的），
+  /// 既拖慢启动又白占内存。默认 0（任务页）是首屏，故预置。
+  /// 已构建的 tab 之后一直保留，滚动位置与已加载数据的行为与 IndexedStack 一致。
+  final Set<int> _visitedTabs = {0};
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -222,31 +228,34 @@ class HomePageState extends ConsumerState<HomePage> {
             RepaintBoundary(
               child: Scaffold(
                 extendBody: true,
-                body: IndexedStack(
-                  index: ref.watch<int>(SingleAccountPageState.ofHomeIndexProvider(context)(
-                      getProviderName(context))),
-                  children: [
-                    Positioned.fill(
-                      child: TaskPage(
-                        key: taskKey,
-                        loading: !getSystemBeanSuccess,
-                      ),
+                body: Builder(builder: (context) {
+                  final currentIndex = ref.watch<int>(SingleAccountPageState.ofHomeIndexProvider(context)(getProviderName(context)));
+                  _visitedTabs.add(currentIndex);
+                  final pages = <Widget>[
+                    TaskPage(
+                      key: taskKey,
+                      loading: !getSystemBeanSuccess,
                     ),
-                    Positioned.fill(
-                      child: EnvPage(
-                        key: envKey,
-                      ),
+                    EnvPage(
+                      key: envKey,
                     ),
-                    const Positioned.fill(
-                      child: ConfigPage(),
+                    const ConfigPage(),
+                    OtherPage(
+                      key: meKey,
                     ),
-                    Positioned.fill(
-                      child: OtherPage(
-                        key: meKey,
-                      ),
+                  ];
+                  return IndexedStack(
+                    index: currentIndex,
+                    children: List<Widget>.generate(
+                      pages.length,
+                      (i) => _visitedTabs.contains(i)
+                          ? Positioned.fill(
+                              child: pages[i],
+                            )
+                          : const SizedBox.shrink(),
                     ),
-                  ],
-                ),
+                  );
+                }),
                 bottomNavigationBar: ClipRect(
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),

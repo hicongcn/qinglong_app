@@ -45,126 +45,28 @@ class TaskViewModel extends BaseViewModel {
       loading(notify: true);
     }
 
-    if (getIt<SystemBean>(instanceName: (SingleAccountPageState.of(context)?.index ?? 0).toString())
-        .isUpperVersion2_13_9()) {
-      var temp = await SingleAccountPageState.ofApi(context).crons2_13_09();
-      if (temp.success && temp.bean != null) {
-        list.clear();
-        list.addAll(temp.bean?.data ?? []);
-        sortList(context);
-        success();
-        if (MultiAccountPageState.actionRunAll == MultiAccountPageState.useAction() &&
-            !runAllTasked) {
-          runAllTasked = true;
-          runAllTasks(context);
-        }
-      } else {
-        list.clear();
-        failed(temp.message, notify: true);
+    var temp = await SingleAccountPageState.ofApi(context).crons2_13_09();
+    if (temp.success && temp.bean != null) {
+      list.clear();
+      list.addAll(temp.bean?.data ?? []);
+      updateTaskBuckets();
+      success();
+      if (MultiAccountPageState.actionRunAll == MultiAccountPageState.useAction() &&
+          !runAllTasked) {
+        runAllTasked = true;
+        runAllTasks(context);
       }
     } else {
-      HttpResponse<List<TaskBean>> result = await SingleAccountPageState.ofApi(context).crons();
-      if (result.success && result.bean != null) {
-        list.clear();
-        list.addAll(result.bean!);
-        sortList(context);
-        success();
-        if (MultiAccountPageState.actionRunAll == MultiAccountPageState.useAction() &&
-            !runAllTasked) {
-          runAllTasked = true;
-          runAllTasks(context);
-        }
-      } else {
-        list.clear();
-        failed(result.message, notify: true);
-      }
+      list.clear();
+      failed(temp.message, notify: true);
     }
   }
 
-  void sortList(BuildContext context) {
-    //2.14.0之后就不需要排序
-    if (!getIt<SystemBean>(
-            instanceName: (SingleAccountPageState.of(context)?.index ?? 0).toString())
-        .isUpperVersion2_14_0()) {
-      List<TaskBean> p = [];
-      List<TaskBean> r = [];
-      List<TaskBean> d = [];
-      for (int i = 0; i < list.length; i++) {
-        if (list[i].isPinned == 1) {
-          p.add(list.removeAt(i));
-          i--;
-          continue;
-        }
-
-        if (list[i].status == 0) {
-          r.add(list.removeAt(i));
-          i--;
-          continue;
-        }
-        if (list[i].isDisabled == 1) {
-          d.add(list.removeAt(i));
-          i--;
-          continue;
-        }
-      }
-
-      p.sort((TaskBean a, TaskBean b) {
-        bool c = DateTime.fromMillisecondsSinceEpoch(a.created ?? 0)
-            .isBefore(DateTime.fromMillisecondsSinceEpoch(b.created ?? 0));
-        if (c == true) {
-          return 1;
-        }
-        return -1;
-      });
-
-      p.sort((a, b) {
-        return (a.isDisabled ?? 0) - (b.isDisabled ?? 0);
-      });
-
-      p.sort((a, b) {
-        if (a.status == 0 && b.status == 0) {
-          bool c = DateTime.fromMillisecondsSinceEpoch(a.created ?? 0)
-              .isBefore(DateTime.fromMillisecondsSinceEpoch(b.created ?? 0));
-          if (c == true) {
-            return 1;
-          }
-          return -1;
-        } else {
-          return (a.status ?? 0) - (b.status ?? 0);
-        }
-      });
-
-      r.sort((a, b) {
-        bool c = DateTime.fromMillisecondsSinceEpoch(a.created ?? 0)
-            .isBefore(DateTime.fromMillisecondsSinceEpoch(b.created ?? 0));
-        if (c == true) {
-          return 1;
-        }
-        return -1;
-      });
-
-      d.sort((a, b) {
-        bool c = DateTime.fromMillisecondsSinceEpoch(a.created ?? 0)
-            .isBefore(DateTime.fromMillisecondsSinceEpoch(b.created ?? 0));
-        if (c == true) {
-          return 1;
-        }
-        return -1;
-      });
-
-      list.sort((a, b) {
-        bool c = DateTime.fromMillisecondsSinceEpoch(a.created ?? 0)
-            .isBefore(DateTime.fromMillisecondsSinceEpoch(b.created ?? 0));
-        if (c == true) {
-          return 1;
-        }
-        return -1;
-      });
-
-      list.insertAll(0, r);
-      list.insertAll(0, p);
-      list.addAll(d);
-    }
+  /// 刷新各 tab 的派生列表。
+  ///
+  /// 列表顺序由服务端给出（isPinned / isDisabled / status / createdAt），
+  /// 客户端不再做本地排序（2.14.0 起服务端已排好序）。
+  void updateTaskBuckets() {
     running.clear();
     running.addAll(list.where((element) => element.status == 0));
     neverRunning.clear();

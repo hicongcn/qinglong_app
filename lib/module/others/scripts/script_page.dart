@@ -110,16 +110,6 @@ class _ScriptPageState extends ConsumerState<ScriptPage> with LazyLoadState<Scri
                     CupertinoSheer(
                       title: "新增文件夹",
                       onTap: () {
-                        SystemBean? systemBean;
-                        try {
-                          systemBean = getIt<SystemBean>(instanceName: (SingleAccountPageState.of(context)?.index ?? 0).toString());
-                        } catch (e) {
-                          systemBean = SystemBean(version: "2.10.13", fromAutoGet: false);
-                        }
-                        if (!systemBean.isUpperVersion2_14_5()) {
-                          "该功能仅支持v2.14.5及以上版本".toast();
-                          return;
-                        }
                         addFloder();
                       },
                     )
@@ -286,31 +276,16 @@ class _ScriptPageState extends ConsumerState<ScriptPage> with LazyLoadState<Scri
   void deleteFold(ScriptData item) async {
     SystemBean? systemBean;
 
-    try {
-      systemBean = getIt<SystemBean>(instanceName: (SingleAccountPageState.of(context)?.index ?? 0).toString());
-    } catch (e) {
-      systemBean = SystemBean(version: "2.10.13", fromAutoGet: false);
-    }
-    if ((item.children.isNotEmpty) && !systemBean.isUpperVersion2_14_5()) {
-      "该功能仅支持v2.14.5及以上版本".toast();
-      return;
-    }
-
     EasyLoading.show(status: "删除中...");
     var temp = (item.type == "directory")
         ? await SingleAccountPageState.ofApi(context).delScriptFold(
             item.title,
             item.parent,
           )
-        : (systemBean.isUpperVersion2_14_5()
-            ? await SingleAccountPageState.ofApi(context).delScriptNewVersion(
-                item.title,
-                item.parent,
-              )
-            : await SingleAccountPageState.ofApi(context).delScript(
-                item.title,
-                item.parent,
-              ));
+        : await SingleAccountPageState.ofApi(context).delScriptNewVersion(
+            item.title,
+            item.parent,
+          );
     EasyLoading.dismiss();
     if (temp.success) {
       "已删除".toast();

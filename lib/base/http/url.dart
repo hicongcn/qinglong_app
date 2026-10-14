@@ -10,8 +10,6 @@ class Url {
 
   static get system => "/api/system";
 
-  static get loginOld => "/api/login";
-
   static get loginTwo => "/api/user/two-factor/login";
   static const loginByClientId = "/open/auth/token";
   static const user = "/api/user";
@@ -39,8 +37,6 @@ class Url {
   get runTasks => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/crons/run" : "/api/crons/run";
 
   get stopTasks => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/crons/stop" : "/api/crons/stop";
-
-  get taskDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/crons/" : "/api/crons/";
 
   get addTask => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/crons" : "/api/crons";
 
@@ -72,11 +68,7 @@ class Url {
 
   get taskLog => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/logs" : "/api/logs";
 
-  get scripts => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts/files" : "/api/scripts/files";
-
-  get scripts2 => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts" : "/api/scripts";
-
-  get scriptUpdate => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts" : "/api/scripts";
+  get scripts => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts" : "/api/scripts";
 
   get scriptDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts" : "/api/scripts";
 
@@ -89,9 +81,6 @@ class Url {
       getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/dependencies/reinstall" : "/api/dependencies/reinstall";
 
   get addScript => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts" : "/api/scripts";
-
-  get dependencyReinstall =>
-      getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/dependencies/reinstall" : "/api/dependencies/reinstall";
 
   get checkUpdate => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/update-check" : "/api/system/update-check";
 
@@ -135,7 +124,7 @@ class Url {
   }
 
   static bool inWhiteList(String path) {
-    if (path == login || path == loginByClientId || path == loginTwo || path == loginOld) {
+    if (path == login || path == loginByClientId || path == loginTwo) {
       return true;
     }
     return false;
@@ -145,7 +134,7 @@ class Url {
     // 注意：登录类接口不能带 Authorization 头。服务端的免登录白名单有一个前提条件
     // 「!headerToken」——只要带了 token（哪怕是已过期的），白名单就不生效，
     // 校验失败直接 401。二次验证登录也不例外，故一并列入。
-    if (path == login || path == loginByClientId || path == loginTwo || path == loginOld) {
+    if (path == login || path == loginByClientId || path == loginTwo) {
       return true;
     }
     return false;

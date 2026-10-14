@@ -190,7 +190,6 @@ class _AddEnvPageState extends ConsumerState<AddEnvPage> with LazyLoadState<AddE
         _valueController.text,
         _remarkController.text,
         id: envBean.id,
-        nId: envBean.nId,
       );
       await EasyLoading.show(status: " 提交中");
       if (envBean.sId != null && envBean.sId!.isNotEmpty) {

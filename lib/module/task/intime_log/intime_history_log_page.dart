@@ -138,18 +138,6 @@ class _InTimeHistoryLogPageState extends State<InTimeHistoryLogPage> with LazyLo
   }
 
   void deleteFold(String title, String path) async {
-    SystemBean? systemBean;
-
-    try {
-      systemBean = getIt<SystemBean>(instanceName: (SingleAccountPageState.of(context)?.index ?? 0).toString());
-    } catch (e) {
-      systemBean = SystemBean(version: "2.10.13", fromAutoGet: false);
-    }
-    if (!systemBean.isUpperVersion2_14_5()) {
-      "该功能仅支持v2.14.5及以上版本".toast();
-      return;
-    }
-
     EasyLoading.show(status: "删除中...");
     var temp = await SingleAccountPageState.ofApi(context).deleteLog(title, path);
     EasyLoading.dismiss();

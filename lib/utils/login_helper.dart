@@ -44,22 +44,6 @@ class LoginHelper {
     if (response.success) {
       loginSuccess(context, response, userName, password);
       return success;
-    } else if (loginByUserName() && response.code == 401) {
-      //可能用户使用的是老版本qinglong
-      HttpResponse<LoginBean> oldResponse =
-          await SingleAccountPageState.ofApi(context)
-              .loginOld(userName, password);
-      if (oldResponse.success) {
-        loginSuccess(context, oldResponse, userName, password);
-        return success;
-      } else {
-        (oldResponse.message ?? "请检查网络情况").toast();
-        if (oldResponse.code == 420) {
-          return twiceLogin;
-        } else {
-          return failed;
-        }
-      }
     } else {
       (response.message ?? "请检查网络情况").toast();
       //420代表需要2步验证

@@ -9,10 +9,8 @@ import 'package:qinglong_app/module/login/user_bean.dart';
 import 'package:qinglong_app/module/others/LogDelBean.dart';
 import 'package:qinglong_app/module/others/dependencies/dependency_bean.dart';
 import 'package:qinglong_app/module/others/login_log/login_log_bean.dart';
-import 'package:qinglong_app/module/others/scripts/script_bean.dart';
 import 'package:qinglong_app/module/others/task_log/task_log_bean.dart';
 import 'package:qinglong_app/module/others/update/check_update_bean.dart';
-import 'package:qinglong_app/module/task/task_bean.dart';
 
 import '../../module/task/TaskBean2.dart';
 import '../ui/tree/models/script_data.dart';
@@ -58,19 +56,6 @@ class Api {
     );
   }
 
-  Future<HttpResponse<LoginBean>> loginOld(
-    String userName,
-    String passWord,
-  ) async {
-    return await getIt<Http>(instanceName: index.toString()).post<LoginBean>(
-      Url.loginOld,
-      {
-        "username": userName,
-        "password": passWord,
-      },
-    );
-  }
-
   Future<HttpResponse<LoginBean>> loginTwo(
     String userName,
     String passWord,
@@ -106,19 +91,13 @@ class Api {
     );
   }
 
+  /// 任务列表：新版返回 `{data:{data:[...],total}}`，由 TaskBean2 解开双层包装
   Future<HttpResponse<TaskBean2>> crons2_13_09() async {
     // 注意：服务端读取的查询参数名是 searchValue，不是 searchText
     // （传 searchText 会被忽略 → 搜索失效、永远返回全部任务）
     return await getIt<Http>(instanceName: index.toString()).get<TaskBean2>(
       getIt<Url>(instanceName: index.toString()).tasks,
       {"page": "1", "size": "10000", "searchValue": ""},
-    );
-  }
-
-  Future<HttpResponse<List<TaskBean>>> crons() async {
-    return await getIt<Http>(instanceName: index.toString()).get<List<TaskBean>>(
-      getIt<Url>(instanceName: index.toString()).tasks,
-      {"searchValue": ""},
     );
   }
 
@@ -230,21 +209,17 @@ class Api {
     );
   }
 
+  /// 新增/修改任务。新版服务端主键是 number，修改时传 `id`（不再有 `_id`）。
   Future<HttpResponse<NullResponse>> addTask(
     String name,
     String command,
     String cron, {
     int? id,
-    String? nId,
   }) async {
     var data = <String, dynamic>{"name": name, "command": command, "schedule": cron};
 
-    if (id != null || nId != null) {
-      if (id != null) {
-        data["id"] = id;
-      } else if (nId != null) {
-        data["_id"] = nId;
-      }
+    if (id != null) {
+      data["id"] = id;
       return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
         getIt<Url>(instanceName: index.toString()).addTask,
         data,
@@ -369,12 +344,13 @@ class Api {
     );
   }
 
+  /// 新增/修改环境变量。新增时服务端要求请求体是**对象数组**；
+  /// 修改时传 `id`（不再有 `_id`）。
   Future<HttpResponse<NullResponse>> addEnv(
     String name,
     String value,
     String remarks, {
     int? id,
-    String? nId,
   }) async {
     var data = <String, dynamic>{
       "value": value,
@@ -382,12 +358,8 @@ class Api {
       "name": name,
     };
 
-    if (id != null || nId != null) {
-      if (id != null) {
-        data["id"] = id;
-      } else if (nId != null) {
-        data["_id"] = nId;
-      }
+    if (id != null) {
+      data["id"] = id;
       return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
         getIt<Url>(instanceName: index.toString()).addEnv,
         data,
@@ -414,8 +386,11 @@ class Api {
   }
 
   Future<HttpResponse<List<TaskLogBean>>> taskLog() async {
-    return await getIt<Http>(instanceName: index.toString()).get<List<TaskLogBean>>(getIt<Url>(instanceName: index.toString()).taskLog, null,
-        serializationName: getIt<SystemBean>(instanceName: index.toString()).isUpperVersion2_12_2() ? "data" : "dirs");
+    // 新版服务端日志列表外层固定是 data（Http.get 的默认 serializationName 即 "data"）
+    return await getIt<Http>(instanceName: index.toString()).get<List<TaskLogBean>>(
+      getIt<Url>(instanceName: index.toString()).taskLog,
+      null,
+    );
   }
 
   /// 单次读取日志的最大字节数（服务端上限 1MiB；不传 limit 时默认只回 256KiB 的尾部）
@@ -435,9 +410,7 @@ class Api {
 
   Future<HttpResponse<List<ScriptData>>> scripts() async {
     return await getIt<Http>(instanceName: index.toString()).get<List<ScriptData>>(
-      getIt<SystemBean>(instanceName: index.toString()).isUpperVersion2_13_0()
-          ? getIt<Url>(instanceName: index.toString()).scripts2
-          : getIt<Url>(instanceName: index.toString()).scripts,
+      getIt<Url>(instanceName: index.toString()).scripts,
       null,
     );
   }
@@ -449,16 +422,6 @@ class Api {
         "filename": name,
         "path": path,
         "content": content,
-      },
-    );
-  }
-
-  Future<HttpResponse<NullResponse>> delScript(String name, String path) async {
-    return await getIt<Http>(instanceName: index.toString()).delete<NullResponse>(
-      getIt<Url>(instanceName: index.toString()).scriptDetail,
-      {
-        "filename": name,
-        "path": path,
       },
     );
   }
@@ -507,21 +470,15 @@ class Api {
     );
   }
 
+  /// 重新安装依赖：新版服务端主键是 number，优先用数字 id 列表。
   Future<HttpResponse<NullResponse>> dependencyReinstall(
     List<String?>? sId,
     List<int?>? id,
   ) async {
-    if (sId != null && sId.isNotEmpty && sId[0] != null) {
-      return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
-        getIt<Url>(instanceName: index.toString()).dependenciesReinstall,
-        sId,
-      );
-    } else {
-      return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
-        getIt<Url>(instanceName: index.toString()).dependenciesReinstall,
-        id,
-      );
-    }
+    return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
+      getIt<Url>(instanceName: index.toString()).dependenciesReinstall,
+      (id != null && id.isNotEmpty) ? id : sId,
+    );
   }
 
   Future<HttpResponse<String>> dependencyLog(String id) async {
@@ -549,42 +506,24 @@ class Api {
     );
   }
 
+  /// 删除依赖。
+  ///
+  /// 新版服务端主键是 number，故优先使用数字 id 列表（字符串数字列表服务端也会转换）。
+  /// 先走 `/dependencies/force`（连同已安装的一并卸载），失败再退回普通删除 ——
+  /// 这是**运行时**回退（该端点在新版仍存在），与版本兼容无关，保留。
   Future<HttpResponse<NullResponse>> delDependency(List<String?>? sIds, List<int?>? ids) async {
-    bool focus = getIt<SystemBean>(instanceName: index.toString()).isUpperVersion2_13_0();
+    final List<dynamic>? payload = (ids != null && ids.isNotEmpty) ? ids : sIds;
+    final url = getIt<Url>(instanceName: index.toString());
 
-    String url = "";
-    if (focus) {
-      url = getIt<Url>(instanceName: index.toString()).dependenciesDeleteFocus;
-    } else {
-      url = getIt<Url>(instanceName: index.toString()).dependencies;
-    }
-
-    HttpResponse<NullResponse> response;
-    if (sIds != null && sIds.isNotEmpty && sIds[0] != null) {
+    var response = await getIt<Http>(instanceName: index.toString()).delete<NullResponse>(
+      url.dependenciesDeleteFocus,
+      payload,
+    );
+    if (response.success == false) {
       response = await getIt<Http>(instanceName: index.toString()).delete<NullResponse>(
-        url,
-        sIds,
+        url.dependencies,
+        payload,
       );
-    } else {
-      response = await getIt<Http>(instanceName: index.toString()).delete<NullResponse>(
-        url,
-        ids,
-      );
-    }
-
-    if (response.success == false && focus) {
-      url = getIt<Url>(instanceName: index.toString()).dependencies;
-      if (sIds != null && sIds.isNotEmpty && sIds[0] != null) {
-        response = await getIt<Http>(instanceName: index.toString()).delete<NullResponse>(
-          url,
-          sIds,
-        );
-      } else {
-        response = await getIt<Http>(instanceName: index.toString()).delete<NullResponse>(
-          url,
-          ids,
-        );
-      }
     }
     return response;
   }

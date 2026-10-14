@@ -76,6 +76,10 @@ class EnvPageState extends ConsumerState<EnvPage> with TickerProviderStateMixin 
   @override
   void dispose() {
     removeOverlay();
+    // 释放控制器，避免页面销毁后仍被持有（内存泄漏）
+    _tabController?.dispose();
+    _scrollController.dispose();
+    searchText.dispose();
     super.dispose();
   }
 

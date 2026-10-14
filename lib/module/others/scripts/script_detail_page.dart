@@ -179,19 +179,8 @@ class _ScriptDetailPageState extends ConsumerState<ScriptDetailPage> with LazyLo
                     ),
                     onPressed: () async {
                       Navigator.of(context1).pop();
-                      SystemBean? systemBean;
-
-                      try {
-                        systemBean = getIt<SystemBean>(instanceName: (SingleAccountPageState.of(context)?.index ?? 0).toString());
-                      } catch (e) {
-                        systemBean = SystemBean(version: "2.10.13", fromAutoGet: false);
-                      }
                       HttpResponse<NullResponse> result;
-                      if (systemBean.isUpperVersion2_14_5()) {
-                        result = await SingleAccountPageState.ofApi(context).delScriptNewVersion(widget.title, widget.path ?? "");
-                      } else {
-                        result = await SingleAccountPageState.ofApi(context).delScript(widget.title, widget.path ?? "");
-                      }
+                      result = await SingleAccountPageState.ofApi(context).delScriptNewVersion(widget.title, widget.path ?? "");
                       if (result.success) {
                         "删除成功".toast();
                         Navigator.of(context).pop(true);

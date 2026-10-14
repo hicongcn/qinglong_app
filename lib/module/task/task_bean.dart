@@ -12,7 +12,6 @@ class TaskBean {
   bool? saved;
   String? sId;
   int? id;
-  String? _id;
   int? created;
   int? status;
   String? timestamp;
@@ -43,8 +42,6 @@ class TaskBean {
       this.lastRunningTime,
       this.pid});
 
-  get nId => _id;
-
   TaskBean.fromJson(Map<String, dynamic> json) {
     try {
       name = json['name'].toString();
@@ -52,10 +49,9 @@ class TaskBean {
       schedule = json['schedule'].toString();
       saved = json['saved'];
       id = json['id'];
-      _id = json['_id'];
-      sId = json.containsKey('_id')
-          ? json['_id'].toString()
-          : (json.containsKey('id') ? json['id'].toString() : "");
+      // 新版服务端主键是 int 的 id（不再有 _id）；sId 是它的字符串形式，
+      // 供以字符串列表传参的批量接口使用。
+      sId = id?.toString();
       created = int.tryParse(json['created'].toString());
       status = json['status'];
       timestamp = json['timestamp'].toString();
@@ -79,7 +75,7 @@ class TaskBean {
     data['command'] = this.command;
     data['schedule'] = this.schedule;
     data['saved'] = this.saved;
-    data['_id'] = this.sId;
+    data['id'] = this.id;
     data['created'] = this.created;
     data['status'] = this.status;
     data['timestamp'] = this.timestamp;

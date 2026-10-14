@@ -271,27 +271,9 @@ class OtherPageState extends ConsumerState<OtherPage>
                                   CupertinoButton(
                                     padding: EdgeInsets.zero,
                                     onPressed: () {
-                                      if (getIt<SystemBean>(
-                                              instanceName:
-                                                  (SingleAccountPageState.of(
-                                                                  context)
-                                                              ?.index ??
-                                                          0)
-                                                      .toString())
-                                          .isUpperVersion2_13_0()) {
-                                        Navigator.of(context).pushNamed(
-                                          Routes.routeSubscribeList,
-                                        );
-                                      } else {
-                                        Navigator.of(context).push(
-                                          CupertinoPageRoute(
-                                            builder: (context) =>
-                                                const TaskPage(
-                                              onlyShowPullRepo: true,
-                                            ),
-                                          ),
-                                        );
-                                      }
+                                      Navigator.of(context).pushNamed(
+                                        Routes.routeSubscribeList,
+                                      );
                                     },
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -309,16 +291,7 @@ class OtherPageState extends ConsumerState<OtherPage>
                                             height: 5,
                                           ),
                                           Text(
-                                            getIt<SystemBean>(
-                                                        instanceName:
-                                                            (SingleAccountPageState.of(
-                                                                            context)
-                                                                        ?.index ??
-                                                                    0)
-                                                                .toString())
-                                                    .isUpperVersion2_13_0()
-                                                ? "订阅管理"
-                                                : "拉库管理",
+                                            "订阅管理",
                                             style: TextStyle(
                                               fontSize: 16,
                                               color: ref

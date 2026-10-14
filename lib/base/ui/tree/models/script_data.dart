@@ -82,7 +82,7 @@ class ScriptData {
     return ScriptData(
       key: '$_key',
       title: title ?? "",
-      type: type ?? "",
+      type: type,
       expanded: false,
       parent: parent ?? "",
       children: _children,

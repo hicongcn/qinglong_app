@@ -7,7 +7,6 @@ class EnvBean {
   String? remarks;
   int? status;
   String? sId;
-  String? _id;
   int? id;
   int? created;
   String? timestamp;
@@ -23,8 +22,6 @@ class EnvBean {
       this.name,
       this.remarks});
 
-  get nId => _id;
-
   EnvBean.fromJson(Map<String, dynamic> json) {
     name = json['name'];
     value = json['value'];
@@ -33,10 +30,8 @@ class EnvBean {
     updatedAt = json['updatedAt'];
     status = json['status'];
     id = json['id'];
-    _id = json['_id'];
-    sId = json.containsKey('_id')
-        ? json['_id'].toString()
-        : (json.containsKey('id') ? json['id'].toString() : "");
+    // 新版服务端主键是 int 的 id（不再有 _id）；sId 是它的字符串形式
+    sId = id?.toString();
     created = int.tryParse(json['created'].toString());
     timestamp = json['timestamp'];
   }
@@ -47,7 +42,6 @@ class EnvBean {
     data['value'] = this.value;
     data['remarks'] = this.remarks;
     data['status'] = this.status;
-    data['_id'] = this._id;
     data['id'] = this.id;
     data['created'] = this.created;
     data['timestamp'] = this.timestamp;

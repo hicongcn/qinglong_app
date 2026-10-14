@@ -11,8 +11,10 @@ class TaskLogBean {
   TaskLogBean({this.name, this.files});
 
   TaskLogBean.fromJson(Map<String, dynamic> json) {
-    name = json['name'] ?? json['title'];
-    isDir = json['isDir'] ?? (json['type'] == "directory");
+    // 新版服务端 /api/logs 的节点字段是 title + type（IFile），
+    // 原先优先取 name/isDir 会把名称和目录判断都取空。
+    name = json['title'] ?? json['name'];
+    isDir = json['type'] == "directory";
 
     files = json['files']?.cast<String>();
     if (json['children'] != null) {

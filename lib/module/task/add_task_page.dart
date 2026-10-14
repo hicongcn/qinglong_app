@@ -261,7 +261,6 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
         _commandController.text.trim(),
         _cronController.text.trim(),
         id: taskBean.id,
-        nId: taskBean.nId,
       );
       await EasyLoading.dismiss();
       if (response.success) {

@@ -3,7 +3,6 @@ import 'package:json_conversion_annotation/json_conversion_annotation.dart';
 
 @JsonConversion()
 class DependencyBean {
-  String? sId;
   String? mustId;
   int? id;
   int? created;
@@ -16,8 +15,7 @@ class DependencyBean {
   String? remark;
 
   DependencyBean(
-      {this.sId,
-      this.created,
+      {this.created,
       this.status,
       this.type,
       this.timestamp,
@@ -25,10 +23,12 @@ class DependencyBean {
       this.log,
       this.remark});
 
+  /// 主键的字符串形式（新版服务端主键是 int 的 id；批量接口按字符串列表传参时用）
+  String? get sId => id?.toString();
+
   DependencyBean.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
     id = json['id'];
-    mustId = sId ?? (id?.toString() ?? "");
+    mustId = id?.toString() ?? "";
     created = int.tryParse(json['created'].toString());
     createdAt = json['createdAt'];
     status = json['status'];
@@ -41,7 +41,7 @@ class DependencyBean {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['_id'] = this.sId;
+    data['id'] = this.id;
     data['created'] = this.created;
     data['status'] = this.status;
     data['type'] = this.type;

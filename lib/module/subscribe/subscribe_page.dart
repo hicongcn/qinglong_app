@@ -45,6 +45,14 @@ class _SubscribePageState extends ConsumerState<SubscribePage> {
     });
   }
 
+  @override
+  void dispose() {
+    // 释放控制器，避免页面销毁后仍被持有（内存泄漏）
+    controller.dispose();
+    searchText.dispose();
+    super.dispose();
+  }
+
   void floatingButtonVisibility() {
     double y = controller.offset;
     if (y > MediaQuery.of(context).size.height / 2) {

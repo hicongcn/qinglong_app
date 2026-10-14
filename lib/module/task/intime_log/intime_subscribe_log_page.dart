@@ -26,7 +26,7 @@ class InTimeSubscribeLogPage extends StatefulWidget {
   _InTimeSubscribeLogPageState createState() => _InTimeSubscribeLogPageState();
 }
 
-class _InTimeSubscribeLogPageState extends State<InTimeSubscribeLogPage> with LazyLoadState<InTimeSubscribeLogPage> {
+class _InTimeSubscribeLogPageState extends State<InTimeSubscribeLogPage> with LazyLoadState<InTimeSubscribeLogPage>, WidgetsBindingObserver {
   Timer? _timer;
 
   String? content;
@@ -36,6 +36,8 @@ class _InTimeSubscribeLogPageState extends State<InTimeSubscribeLogPage> with La
   @override
   void initState() {
     super.initState();
+    // 观察前后台切换，用于暂停日志轮询
+    WidgetsBinding.instance.addObserver(this);
     getLogData();
   }
 
@@ -65,8 +67,28 @@ class _InTimeSubscribeLogPageState extends State<InTimeSubscribeLogPage> with La
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     super.dispose();
+  }
+
+  /// 退到后台/被其他页面覆盖时停止 2 秒一次的日志轮询（否则会一直拉取，
+  /// 白白消耗流量与电量），回到前台再自动恢复。
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (!widget.needTimer) return;
+    if (state == AppLifecycleState.resumed) {
+      if (_timer == null) {
+        _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+          getLogData();
+        });
+        getLogData();
+      }
+    } else {
+      _timer?.cancel();
+      _timer = null;
+    }
   }
 
   @override

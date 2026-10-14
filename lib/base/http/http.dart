@@ -37,14 +37,21 @@ class Http {
     _dio = Dio(
       BaseOptions(
         baseUrl: host,
-        connectTimeout: 50000,
-        receiveTimeout: 50000,
-        sendTimeout: 50000,
+        // 连接/发送 15~20s、接收 30s：既能在网络不通时快速反馈，
+        // 又不至于把慢速但仍在传输的请求（如日志分片）误判为超时
+        // （receiveTimeout 是"两个数据包之间"的间隔，不是整包时长）。
+        connectTimeout: 15000,
+        receiveTimeout: 30000,
+        sendTimeout: 20000,
         contentType: "application/json",
       ),
     );
-    _dio?.interceptors.add(DioLogInterceptor());
-    _dio?.interceptors.add(PrettyDioLogger());
+    if (kDebugMode) {
+      // 日志拦截器只在调试期挂载：release 下它们会逐条格式化并缓存
+      // 请求/响应正文，纯粹是 CPU 与内存浪费。
+      _dio?.interceptors.add(DioLogInterceptor());
+      _dio?.interceptors.add(PrettyDioLogger());
+    }
 
     _dio?.interceptors.add(TokenInterceptor(
       host,
