@@ -47,7 +47,6 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
   bool alwaysAuthScroll = false;
 
   ScrollController? controller = ScrollController();
-  bool showVIPReminder = false;
 
   getLogData() async {
     if (!canRequest) return;
@@ -67,8 +66,7 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
       if (found != null &&
           found.isNotEmpty &&
           widget.command != null &&
-          (widget.command!.endsWith(".js") || widget.command!.endsWith(".ts") || widget.command!.endsWith(".py")) &&
-          SpUtil.getInt(spVIP, defValue: typeNormal) != typeNormal) {
+          (widget.command!.endsWith(".js") || widget.command!.endsWith(".ts") || widget.command!.endsWith(".py"))) {
         Api api = Api(SingleAccountPageState.of(context)?.index ?? 0);
         var result = await ScanPageState.autoInstallFounded(api, found, widget.command!);
         if (result == true) {

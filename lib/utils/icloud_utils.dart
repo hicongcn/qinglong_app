@@ -30,7 +30,6 @@ class ICloudUtils {
   Future<void> asyncSubscribe(String list, {bool focusUpdate = false}) async {
     try {
       if (list.isEmpty) return;
-      if (SpUtil.getInt(spVIP, defValue: typeNormal) == typeNormal) return;
       if (SpUtil.getBool(spICloud, defValue: true) == false &&
           focusUpdate == false) return;
 
@@ -60,7 +59,6 @@ class ICloudUtils {
   Future<void> asyncEnv(List<EnvBean> list, {bool focusUpdate = false}) async {
     try {
       if (list.isEmpty) return;
-      if (SpUtil.getInt(spVIP, defValue: typeNormal) == typeNormal) return;
       if (SpUtil.getBool(spICloud, defValue: true) == false &&
           focusUpdate == false) return;
       bool exist = await existContent(
@@ -77,7 +75,6 @@ class ICloudUtils {
   Future<void> asyncConfig(String? title, String? content,
       {bool focusUpdate = false}) async {
     try {
-      if (SpUtil.getInt(spVIP, defValue: typeNormal) == typeNormal) return;
 
       if (content == null || content.isEmpty) return;
       if (SpUtil.getBool(spICloud, defValue: true) == false &&
@@ -95,7 +92,6 @@ class ICloudUtils {
   }
 
   void restoreEnv(String? path) async {
-    if (SpUtil.getInt(spVIP, defValue: typeNormal) == typeNormal) return;
 
     if (path == null) {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -114,7 +110,6 @@ class ICloudUtils {
   }
 
   void restoreSubscribe(String? path) async {
-    if (SpUtil.getInt(spVIP, defValue: typeNormal) == typeNormal) return;
     if (path == null) {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
       if (result != null &&
@@ -132,7 +127,6 @@ class ICloudUtils {
   }
 
   void restoreConfig(String? path) async {
-    if (SpUtil.getInt(spVIP, defValue: typeNormal) == typeNormal) return;
     if (path == null) {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
       if (result != null &&

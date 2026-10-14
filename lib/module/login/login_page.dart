@@ -12,7 +12,6 @@ import 'package:qinglong_app/base/theme.dart';
 import 'package:qinglong_app/base/ui/loading_widget.dart';
 import 'package:qinglong_app/base/userinfo_viewmodel.dart';
 import 'package:qinglong_app/main.dart';
-import 'package:qinglong_app/module/in_app_purchase_page.dart';
 import 'package:qinglong_app/utils/extension.dart';
 import 'package:qinglong_app/utils/login_helper.dart';
 import 'package:qinglong_app/utils/sp_utils.dart';
@@ -108,29 +107,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          if (SpUtil.getInt(spVIP, defValue: typeNormal) == typeNormal) {
-                            Navigator.of(context).push(
-                              CupertinoPageRoute(
-                                builder: (context) => const InAppPurchasePage(
-                                  fromDirectly: true,
-                                ),
-                              ),
-                            );
+                          // VIP 体系已移除：直接进账号切换（单实例模式下关闭当前页）
+                          if (SpUtil.getBool(spSingleInstance, defValue: false)) {
+                            Navigator.pop(context);
                             return;
-                          } else {
-                            if (SpUtil.getBool(spSingleInstance, defValue: false)) {
-                              Navigator.pop(context);
-                              return;
-                            }
-                            Navigator.of(context).push(
-                              PageRouteBuilder(
-                                pageBuilder: (context, animation1, animation2) =>
-                                    const ChangeAccountPage(),
-                                transitionDuration: Duration.zero,
-                                reverseTransitionDuration: Duration.zero,
-                              ),
-                            );
                           }
+                          Navigator.of(context).push(
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation1, animation2) =>
+                                  const ChangeAccountPage(),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
+                            ),
+                          );
                         },
                         child: Row(
                           children: [
@@ -552,6 +541,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       Navigator.of(context).pushReplacementNamed(Routes.routeHomePage);
     } else if (response == LoginHelper.failed) {
       loginFailed();
+    } else if (response == LoginHelper.needInit) {
+      // 服务端尚未初始化（青龙首次部署）：就地设置管理员账号密码
+      isLoading = false;
+      setState(() {});
+      LoginHelper.initServer(context);
     } else {
       twoFact();
     }

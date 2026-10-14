@@ -5,6 +5,7 @@ import 'package:qinglong_app/base/single_account_page.dart';
 import 'package:qinglong_app/module/others/dependencies/dependency_bean.dart';
 import 'package:qinglong_app/module/others/dependencies/dependency_page.dart';
 import 'package:qinglong_app/utils/extension.dart';
+import 'package:qinglong_app/utils/secret_login_hint.dart';
 
 
 
@@ -61,7 +62,12 @@ class DependencyViewModel extends BaseViewModel {
       }
       success();
     } else {
-      response.message?.toast();
+      final String? hint = secretLoginScopeHint(context, response.code, "依赖管理");
+      if (hint != null) {
+        hint.toast();
+      } else {
+        response.message?.toast();
+      }
     }
   }
 

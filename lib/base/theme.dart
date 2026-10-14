@@ -33,7 +33,7 @@ class ThemeViewModel extends ChangeNotifier {
     if (SpUtil.getBool(spThemeFollowSystem, defValue: false)) {
       changeThemeWithSystemStatus();
     } else {
-      _themeMode = SpUtil.getInt(spThemeStyle, defValue: SpUtil.getInt(spVIP, defValue: typeNormal) != typeNormal ? modeWhite : modeLight);
+      _themeMode = SpUtil.getInt(spThemeStyle, defValue: modeWhite);
     }
 
     changeThemeReal(_themeMode, false);
@@ -46,7 +46,7 @@ class ThemeViewModel extends ChangeNotifier {
     if (brightness == Brightness.dark) {
       theme = modeDark;
     } else {
-      theme = SpUtil.getInt(spVIP, defValue: typeNormal) != typeNormal ? modeWhite : modeLight;
+      theme = modeWhite;
     }
     if (!must && _themeMode == theme) return;
     changeThemeReal(theme);

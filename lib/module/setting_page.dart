@@ -50,10 +50,8 @@ class _SettingPageState extends ConsumerState<SettingPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Visibility(
-              visible: Platform.isIOS ||
-                  SpUtil.getInt(spVIP, defValue: typeNormal) != typeNormal,
-              child: Column(
+            // 原「VIP功能」区块：VIP 体系已移除，对所有人开放
+            Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(
@@ -64,7 +62,7 @@ class _SettingPageState extends ConsumerState<SettingPage> {
                       left: 30,
                     ),
                     child: Text(
-                      "VIP功能",
+                      "高级功能",
                       style: TextStyle(
                         color: ref.watch(themeProvider).themeColor.descColor(),
                         fontSize: 12,
@@ -278,8 +276,7 @@ class _SettingPageState extends ConsumerState<SettingPage> {
                       ],
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
             const SizedBox(
               height: 15,

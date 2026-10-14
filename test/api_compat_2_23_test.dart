@@ -31,6 +31,10 @@ void main() {
   late String baseUrl;
   late List<String> requests;
 
+  /// /api/user/init 的 mock 行为：ok=未初始化可设置 / already=已完成初始化 / admin=密码非法
+  String initMode = "ok";
+  late List<String> initBodies;
+
   setUpAll(() async {
     // flutter_test 默认拦截网络（一律返回 400），这里放行，改用本机 mock 服务
     HttpOverrides.global = null;
@@ -44,8 +48,8 @@ void main() {
       // 记录完整请求行，供断言使用
       requests.add("${req.method} ${uri.path}?${uri.query}");
 
-      // 读掉请求体，避免连接复用异常
-      await req.drain<void>();
+      // 读掉请求体（顺便留下 init 的 body 供断言），避免连接复用异常
+      final String body = await utf8.decoder.bind(req).join();
 
       switch (path) {
         case "/api/logs/detail":
@@ -66,6 +70,18 @@ void main() {
           return;
 
         // 日志删除频率（新版的家）
+        // 初始化服务端（PUT /api/user/init）
+        case "/api/user/init":
+          initBodies.add(body);
+          if (initMode == "already") {
+            _send(req, {"code": 450, "message": "未知错误"});
+          } else if (initMode == "admin") {
+            _send(req, {"code": 400, "message": "密码不能设置为admin"});
+          } else {
+            _send(req, {"code": 200, "message": "更新成功"});
+          }
+          return;
+
         case "/api/system/config":
           _send(req, {
             "code": 200,
@@ -132,6 +148,8 @@ void main() {
 
   setUp(() async {
     requests = <String>[];
+    initBodies = <String>[];
+    initMode = "ok";
     final getIt = GetIt.instance;
     // get_it 7.x 的 reset() 是异步的（要等 dispose 完成才真正清空），
     // 不 await 会把下面刚注册的实例又清掉。
@@ -212,6 +230,44 @@ void main() {
       requests.single,
       startsWith("PUT /api/system/config/log-remove-frequency?"),
     );
+  });
+
+  test("初始化服务端：PUT /api/user/init，body 为 username/password", () async {
+    final api = Api(0);
+    final res = await api.initUser("admin2", "pass1234");
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(requests.length, 1, reason: requests.toString());
+    expect(requests.single, startsWith("PUT /api/user/init"));
+    final Map<String, dynamic> sent =
+        jsonDecode(initBodies.single) as Map<String, dynamic>;
+    expect(sent["username"], "admin2");
+    expect(sent["password"], "pass1234");
+  });
+
+  test("初始化服务端：已完成初始化时服务端回 450，客户端应能识别", () async {
+    initMode = "already";
+    final api = Api(0);
+    final res = await api.initUser("admin2", "pass1234");
+
+    // 供登录流程区分：code 450 表示「服务端已初始化」，不该当普通失败处理
+    expect(res.success, isFalse);
+    expect(res.code, 450);
+  });
+
+  test("初始化服务端：密码为 admin 被服务端拒绝（400）", () async {
+    initMode = "admin";
+    final api = Api(0);
+    final res = await api.initUser("admin2", "admin");
+
+    expect(res.success, isFalse);
+    expect(res.code, 400);
+    expect(res.message, contains("admin"));
+  });
+
+  test("初始化接口必须在免登录白名单里（未初始化时还没有 token）", () {
+    expect(Url.inWhiteList(Url.initUser), isTrue);
+    expect(Url.inLoginList(Url.initUser), isTrue);
   });
 
   test("任务列表：解开 data.data 双层包装，且只传 searchValue", () async {

@@ -8,26 +8,12 @@ import 'sp_const.dart';
 import 'userinfo_viewmodel.dart';
 
 class MultiAccountUserInfoViewModel {
-  static int maxAccount = 1; //1代表普通用户, 5代表付费用户
+  /// 多账号上限。原实现按 VIP 等级分级（普通 1 / VIP 3 / SVIP 5），
+  /// 现已取消 VIP 体系，统一放开到 5，用户可在「多账号数」里自行调整。
+  static int maxAccount = 5;
 
   List<TokenBean> tokenBeans = [];
   List<UserInfoBean> historyAccounts = [];
-
-  static void payedVIP(int type) {
-    if (SpUtil.getInt(spVIP, defValue: typeNormal) == typeSVIP) return;
-
-    SpUtil.putInt(spVIP, type);
-
-    int count = 1;
-    if (type == typeNormal) {
-      count = 1;
-    } else if (type == typeVIP) {
-      count = 3;
-    } else if (type == typeSVIP) {
-      count = 5;
-    }
-    SpUtil.putInt(spAccountCount, count);
-  }
 
   static void updateMaxAccount(int count) {
 
@@ -59,16 +45,10 @@ class MultiAccountUserInfoViewModel {
     }
   }
 
+  /// 初始化多账号上限（不再区分 VIP 等级）。
   void initVipState() {
-    int vipType = SpUtil.getInt(spVIP, defValue: typeNormal);
-
-    if (vipType == typeNormal) {
-      maxAccount = 1;
-    } else if (vipType == typeVIP) {
-      maxAccount = 3;
-    } else {
-      maxAccount = SpUtil.getInt(spAccountCount, defValue: 5);
-    }
+    maxAccount = SpUtil.getInt(spAccountCount, defValue: 5);
+    if (maxAccount < 1) maxAccount = 1;
   }
 
   void save2HistoryAccount(UserInfoBean userInfoBean) {

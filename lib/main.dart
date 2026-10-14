@@ -16,6 +16,7 @@ import 'package:qinglong_app/base/theme.dart';
 import 'package:qinglong_app/base/ui/animated_indexed_switch.dart';
 import 'package:qinglong_app/base/ui/loading_widget.dart';
 import 'package:qinglong_app/utils/extension.dart';
+import 'package:qinglong_app/utils/app_resume_gate.dart';
 import 'package:qinglong_app/utils/sp_utils.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:local_auth_android/local_auth_android.dart';
@@ -32,7 +33,6 @@ void main() async {
   await SpUtil.getInstance();
   getIt.registerSingleton<MultiAccountUserInfoViewModel>(
       MultiAccountUserInfoViewModel());
-  MultiAccountUserInfoViewModel.payedVIP(typeSVIP);
   getIt.get<MultiAccountUserInfoViewModel>().initVipState();
   openAuth = SpUtil.getBool(spOpenAuth, defValue: false);
   await SystemChrome.setPreferredOrientations(
@@ -164,6 +164,8 @@ class QlAppState extends ConsumerState<QlApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 记录离开前台的时刻，供各页面判断「回到前台是否值得整表重拉」
+    AppResumeGate.onLifecycleState(state);
     if (state == AppLifecycleState.inactive) {
       FocusManager.instance.primaryFocus?.unfocus();
     }

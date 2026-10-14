@@ -56,6 +56,21 @@ class Api {
     );
   }
 
+  /// 初始化服务端（青龙首次部署时设置管理员账号密码）。
+  /// 服务端已完成初始化时会返回 code 450。
+  Future<HttpResponse<NullResponse>> initUser(
+    String userName,
+    String passWord,
+  ) async {
+    return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
+      Url.initUser,
+      {
+        "username": userName,
+        "password": passWord,
+      },
+    );
+  }
+
   Future<HttpResponse<LoginBean>> loginTwo(
     String userName,
     String passWord,

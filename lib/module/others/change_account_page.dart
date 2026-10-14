@@ -27,8 +27,7 @@ class _ChangeAccountPageState extends ConsumerState<ChangeAccountPage> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (MultiAccountUserInfoViewModel.maxAccount == 1 &&
-          SpUtil.getInt(spVIP, defValue: typeNormal) != typeNormal) {
+      if (MultiAccountUserInfoViewModel.maxAccount == 1) {
         "请杀掉App重新进入,即可启用多账号切换功能".toast();
       }
     });

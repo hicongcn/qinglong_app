@@ -565,12 +565,6 @@ class HomePageState extends ConsumerState<HomePage> {
   List<Widget> _buildSingleInstance() {
     int count = getIt<MultiAccountUserInfoViewModel>().historyAccounts.length;
 
-    if (SpUtil.getInt(spVIP, defValue: typeNormal) == typeVIP) {
-      if (count > 3) {
-        count = 3;
-      }
-    }
-
     return List.generate(count + 1, (index) {
       if (index >= count) {
         return Material(
@@ -733,6 +727,8 @@ class HomePageState extends ConsumerState<HomePage> {
       Navigator.of(context).pushReplacementNamed(Routes.routeHomePage);
     } else if (response == LoginHelper.failed) {
       EasyLoading.showError("登录失败，请检查账号");
+    } else if (response == LoginHelper.needInit) {
+      LoginHelper.initServer(context);
     } else {
       twoFact(hepler);
     }

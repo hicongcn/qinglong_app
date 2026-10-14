@@ -1,15 +1,8 @@
 String spLoginHistory = "loginHistory";
 String spTokenBeanList = "spTokenBeanList";
 String spAccountCount = "spAccountCount";
-String spVIP = "spvip";
-String spVIPLOGO = "spviplogo";
-String spVIPLOGOChangeReminder = "spVIPLOGOChangeReminder";
 String spOpenAuth = "spOpenAuth";
 String spPoetToken = "spPoetToken";
-
-const typeNormal = 0;
-const typeVIP = 10;
-const typeSVIP = 12531;
 
 String spEnvBackTime = "envBackTime";
 String spSubscribeBackTime = "subscribeBackTime";

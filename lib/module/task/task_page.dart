@@ -17,6 +17,7 @@ import 'package:qinglong_app/module/task/add_task_page.dart';
 import 'package:qinglong_app/module/task/intime_log/intime_log_page.dart';
 import 'package:qinglong_app/module/task/task_bean.dart';
 import 'package:qinglong_app/module/task/task_viewmodel.dart';
+import 'package:qinglong_app/utils/app_resume_gate.dart';
 import 'package:qinglong_app/utils/extension.dart';
 import 'package:qinglong_app/utils/sp_utils.dart';
 import 'package:qinglong_app/utils/utils.dart';
@@ -56,6 +57,8 @@ class TaskPageState extends ConsumerState<TaskPage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
+      // 只是去系统弹窗/文件选择器转一圈就别整表重拉了（一次要 10000 条）
+      if (!AppResumeGate.shouldRefreshOnResume()) return;
       ref
           .read(SingleAccountPageState.ofTaskProvider(context)(getProviderName(context)).notifier)
           .loadData(context);

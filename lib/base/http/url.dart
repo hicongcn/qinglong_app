@@ -11,6 +11,9 @@ class Url {
   static get system => "/api/system";
 
   static get loginTwo => "/api/user/two-factor/login";
+
+  /// 青龙首次部署（服务端还没有账号）时用于设置管理员账号密码
+  static get initUser => "/api/user/init";
   static const loginByClientId = "/open/auth/token";
   static const user = "/api/user";
 
@@ -124,7 +127,10 @@ class Url {
   }
 
   static bool inWhiteList(String path) {
-    if (path == login || path == loginByClientId || path == loginTwo) {
+    if (path == login ||
+        path == loginByClientId ||
+        path == loginTwo ||
+        path == initUser) {
       return true;
     }
     return false;
@@ -134,7 +140,10 @@ class Url {
     // 注意：登录类接口不能带 Authorization 头。服务端的免登录白名单有一个前提条件
     // 「!headerToken」——只要带了 token（哪怕是已过期的），白名单就不生效，
     // 校验失败直接 401。二次验证登录也不例外，故一并列入。
-    if (path == login || path == loginByClientId || path == loginTwo) {
+    if (path == login ||
+        path == loginByClientId ||
+        path == loginTwo ||
+        path == initUser) {
       return true;
     }
     return false;

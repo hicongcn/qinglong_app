@@ -7,6 +7,7 @@ import 'package:qinglong_app/base/single_account_page.dart';
 import 'package:qinglong_app/main.dart';
 import 'package:qinglong_app/utils/extension.dart';
 import 'package:qinglong_app/utils/icloud_utils.dart';
+import 'package:qinglong_app/utils/secret_login_hint.dart';
 
 class SubscribeViewModel extends BaseViewModel {
   List<Map<String, dynamic>> list = [];
@@ -44,7 +45,10 @@ class SubscribeViewModel extends BaseViewModel {
       if (result.code == 404) {
         failed("当前版本不支持订阅管理,如有需要请先将服务器更新到青龙最新版", notify: true);
       } else {
-        failed(result.message, notify: true);
+        failed(
+          secretLoginScopeHint(context, result.code, "订阅管理") ?? result.message,
+          notify: true,
+        );
       }
     }
   }

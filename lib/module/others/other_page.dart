@@ -12,7 +12,6 @@ import 'package:qinglong_app/base/single_account_page.dart';
 import 'package:qinglong_app/base/sp_const.dart';
 import 'package:qinglong_app/base/theme.dart';
 import 'package:qinglong_app/base/ui/lazy_load_state.dart';
-import 'package:qinglong_app/module/in_app_purchase_page.dart';
 import 'package:qinglong_app/module/others/change_account_page.dart';
 import 'package:qinglong_app/module/others/sort_account_page.dart';
 import 'package:qinglong_app/module/others/text_size_page.dart';
@@ -98,7 +97,7 @@ class OtherPageState extends ConsumerState<OtherPage>
                         ? null
                         : const DecorationImage(
                             image:
-                                AssetImage('assets/images/icon_other_bg.png'),
+                                AssetImage('assets/images/icon_other_bg.jpg'),
                             fit: BoxFit.cover,
                           ),
                   ),
@@ -111,31 +110,20 @@ class OtherPageState extends ConsumerState<OtherPage>
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
-                          if (SpUtil.getInt(spVIP, defValue: typeNormal) ==
-                              typeNormal) {
-                            Navigator.of(context).push(
-                              CupertinoPageRoute(
-                                builder: (context) => const InAppPurchasePage(
-                                  fromDirectly: true,
-                                ),
-                              ),
-                            );
+                          // VIP 体系已移除：直接进账号切换（单实例模式下不提供）
+                          if (SpUtil.getBool(spSingleInstance,
+                              defValue: false)) {
                             return;
-                          } else {
-                            if (SpUtil.getBool(spSingleInstance,
-                                defValue: false)) {
-                              return;
-                            }
-                            Navigator.of(context).push(
-                              PageRouteBuilder(
-                                pageBuilder:
-                                    (context, animation1, animation2) =>
-                                        const ChangeAccountPage(),
-                                transitionDuration: Duration.zero,
-                                reverseTransitionDuration: Duration.zero,
-                              ),
-                            );
                           }
+                          Navigator.of(context).push(
+                            PageRouteBuilder(
+                              pageBuilder:
+                                  (context, animation1, animation2) =>
+                                      const ChangeAccountPage(),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
+                            ),
+                          );
                         },
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,21 +140,21 @@ class OtherPageState extends ConsumerState<OtherPage>
                                       height: 60,
                                       placeholder: (_, __) {
                                         return Image.asset(
-                                          getImageByVIPLogo(),
+                                          _defaultUserAvatar(),
                                           width: 60,
                                           height: 60,
                                         );
                                       },
                                       errorWidget: (_, __, ___) {
                                         return Image.asset(
-                                          getImageByVIPLogo(),
+                                          _defaultUserAvatar(),
                                           width: 60,
                                           height: 60,
                                         );
                                       },
                                     )
                                   : Image.asset(
-                                      getImageByVIPLogo(),
+                                      _defaultUserAvatar(),
                                       width: 60,
                                       height: 60,
                                     ),
@@ -415,66 +403,6 @@ class OtherPageState extends ConsumerState<OtherPage>
                         ),
                       ),
                     ],
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(
-                    left: 15,
-                    right: 15,
-                    top: 20,
-                  ),
-                  child: InkWell(
-                    borderRadius: const BorderRadius.all(
-                      Radius.circular(10),
-                    ),
-                    onTap: () {
-                      Navigator.of(context)
-                          .push(
-                        CupertinoPageRoute(
-                          builder: (context) => const InAppPurchasePage(
-                            fromDirectly: true,
-                          ),
-                        ),
-                      )
-                          .then((value) {
-                        setState(() {});
-                      });
-                    },
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        color: ref
-                            .watch(themeProvider)
-                            .themeColor
-                            .settingBordorColor(),
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(10),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                          top: 12,
-                          bottom: 12,
-                          left: 15,
-                          right: 15,
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              "APP功能介绍",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                                color: ref
-                                    .watch(themeProvider)
-                                    .themeColor
-                                    .titleColor(),
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
-                        ),
-                      ),
-                    ),
                   ),
                 ),
                 const SizedBox(
@@ -979,11 +907,8 @@ class OtherPageState extends ConsumerState<OtherPage>
     );
   }
 
-  String getImageByVIP() {
-    return "assets/images/normal.png";
-  }
-
-  String getImageByVIPLogo() {
+  /// 默认用户头像（原按 VIP 等级区分，现已统一）
+  String _defaultUserAvatar() {
     return "assets/images/ql.png";
   }
 
@@ -1074,12 +999,9 @@ class OtherPageState extends ConsumerState<OtherPage>
   }
 }
 
+/// 本地备份文件默认保留天数（超过该天数的备份会被自动删除）。
+/// 原实现按 VIP 分级（VIP 5 天 / 其它 30 天），VIP 体系移除后统一取 30 天
+/// —— 保留更久更保守，不会因为默认值把用户的备份删掉。
 int getDefaultLogExperiedTime() {
-  int count = 5;
-  if (SpUtil.getInt(spVIP, defValue: typeNormal) == typeVIP) {
-    count = 5;
-  } else {
-    count = 30;
-  }
-  return count;
+  return 30;
 }

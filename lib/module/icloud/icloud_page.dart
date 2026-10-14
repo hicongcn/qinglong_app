@@ -339,7 +339,7 @@ class _IcloudPageState extends ConsumerState<IcloudPage> with LazyLoadState<Iclo
                   horizontal: 15,
                 ),
                 child: Text(
-                  SpUtil.getInt(spVIP, defValue: typeNormal) == typeVIP ? "config.sh文件" : "配置文件",
+                  "配置文件",
                   style: TextStyle(
                     color: ref.watch(themeProvider).themeColor.descColor(),
                     fontSize: 12,

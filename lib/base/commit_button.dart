@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../module/in_app_purchase_page.dart';
 
 class CommitButton extends StatefulWidget {
   final GestureTapCallback onTap;
@@ -41,14 +40,4 @@ class _CommitButtonState extends State<CommitButton> {
       ),
     );
   }
-}
-
-void gotoInAppPurchase(BuildContext context) {
-  Navigator.of(context).push(
-    CupertinoPageRoute(
-      builder: (context) => const InAppPurchasePage(
-        fromDirectly: true,
-      ),
-    ),
-  );
 }
