@@ -806,15 +806,10 @@ class OtherPageState extends ConsumerState<OtherPage>
 
   void _delLog(BuildContext context) async {
     var response = await SingleAccountPageState.ofApi(context).logDel();
-    String day = "";
-
-    if (response.success) {
-      if (response.bean != null && response.bean?.frequency != null) {
-        day = response.bean!.frequency!.toString();
-      } else {
-        day = response.bean?.info?.frequency.toString() ?? "";
-      }
-    }
+    // 老服务端频率在 frequency / info.frequency，2.19+ 在 info.logRemoveFrequency
+    String day = response.success
+        ? (response.bean?.removeFrequency?.toString() ?? "")
+        : "";
 
     TextEditingController controller = TextEditingController(text: day);
     showCupertinoDialog(

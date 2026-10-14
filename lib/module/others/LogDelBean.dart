@@ -29,6 +29,12 @@ class LogDelBean {
     updatedAt = json['updatedAt'];
   }
 
+  /// 日志删除频率（天）。
+  /// 老接口 /api/system/log/remove 返回 frequency / info.frequency；
+  /// 2.19+ 改读系统配置，值在 info.logRemoveFrequency。
+  int? get removeFrequency =>
+      info?.logRemoveFrequency ?? frequency ?? info?.frequency;
+
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['frequency'] = this.frequency;
@@ -53,15 +59,20 @@ class Data {}
 class Info {
   int? frequency;
 
-  Info({this.frequency});
+  /// 2.19+ 的字段名（系统配置里的日志删除频率）
+  int? logRemoveFrequency;
+
+  Info({this.frequency, this.logRemoveFrequency});
 
   Info.fromJson(Map<String, dynamic> json) {
     frequency = json['frequency'];
+    logRemoveFrequency = json['logRemoveFrequency'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['frequency'] = this.frequency;
+    data['logRemoveFrequency'] = this.logRemoveFrequency;
     return data;
   }
 }

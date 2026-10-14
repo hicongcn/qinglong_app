@@ -102,6 +102,28 @@ class Url {
 
   get checkUpdate => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/update-check" : "/api/system/update-check";
 
+  // ── 2.19+ 起，按文件名读内容的三个老接口固定返回 410，改用 detail 系列 ──
+  // （服务端原文：「接口已下线，请使用 /logs/detail 接口」等）
+  get logsDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/logs/detail" : "/api/logs/detail";
+
+  get scriptsDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts/detail" : "/api/scripts/detail";
+
+  get configsDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/configs/detail" : "/api/configs/detail";
+
+  // 2.19+ 起 /api/system/log/remove 已移除：频率改读系统配置、改走 config/log-remove-frequency
+  get systemConfig => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/config" : "/api/system/config";
+
+  get logRemoveFrequency =>
+      getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/config/log-remove-frequency" : "/api/system/config/log-remove-frequency";
+
+  /// 该服务端是否已启用 detail 读取接口。
+  /// 初值为 false（先按老接口请求），一旦收到 410 就置为 true，之后不再重复试老接口。
+  bool _useDetailReadApi = false;
+
+  bool get useDetailReadApi => _useDetailReadApi;
+
+  void markDetailReadApi() => _useDetailReadApi = true;
+
   get appkeys => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/apps" : "/api/apps";
 
   resetAppKey(dynamic id) {
@@ -134,7 +156,10 @@ class Url {
   }
 
   static bool inLoginList(String path) {
-    if (path == login || path == loginByClientId || path == loginOld) {
+    // 注意：登录类接口不能带 Authorization 头。服务端的免登录白名单有一个前提条件
+    // 「!headerToken」——只要带了 token（哪怕是已过期的），白名单就不生效，
+    // 校验失败直接 401。二次验证登录也不例外，故一并列入。
+    if (path == login || path == loginByClientId || path == loginTwo || path == loginOld) {
       return true;
     }
     return false;
