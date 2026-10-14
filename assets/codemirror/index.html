@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, user-scalable=no"/>
+
+    <!--
+      全部资源随 App 打包（本目录下同名文件），通过 loadFlutterAsset 以文件方式加载，
+      因此同为 file:// 源、相对路径可直接解析，**完全不需要联网**。
+      旧实现把这些 <link>/<script> 全部指向 https://unpkg.com/codemirror@5.65.6/…，
+      国内访问 unpkg 极慢甚至不可达，导致「脚本编辑」「配置文件」打开后长时间空白。
+    -->
+    <link rel="stylesheet" href="codemirror.css"/>
+    <link rel="stylesheet" href="theme-neat.css"/>
+    <link rel="stylesheet" href="theme-3024-night.css"/>
+    <link rel="stylesheet" href="addon-dialog.css"/>
+    <link rel="stylesheet" href="addon-foldgutter.css"/>
+
+    <title>Editor</title>
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+      #content {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .CodeMirror {float: left; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+<div id="content"></div>
+<script src="codemirror.js"></script>
+<script src="addon-search.js"></script>
+<script src="addon-dialog.js"></script>
+<script src="addon-searchcursor.js"></script>
+<script src="addon-match-highlighter.js"></script>
+<script src="addon-jump-to-line.js"></script>
+<script src="addon-foldcode.js"></script>
+<script src="addon-foldgutter.js"></script>
+<script src="addon-brace-fold.js"></script>
+<script src="addon-xml-fold.js"></script>
+<script src="addon-markdown-fold.js"></script>
+<script src="addon-comment-fold.js"></script>
+<script src="addon-indent-fold.js"></script>
+<script src="mode-shell.js"></script>
+<script src="mode-javascript.js"></script>
+<script src="mode-python.js"></script>
+<script src="mode-yaml.js"></script>
+
+<script type="text/javascript">
+      const element = document.querySelector("#content");
+      const editor = CodeMirror(element, {
+        lineNumbers: false,
+        theme: "neat",
+        mode: "shell",
+        readOnly: true,
+        lineWrapping: true,
+        styleActiveLine: true,
+        matchBrackets: true,
+        foldGutter: {},
+        gutters: []
+      });
+
+      // 语言模式在运行时切换（mode 相关文件已全部随 App 打包）。
+      // 这里的 gutters/foldGutter 取值与原实现（按 EDITOR_MODE 模板展开）完全一致：
+      // shell 模式不显示行号与折叠槽，其它模式两者都显示。
+      function setMode(mode) {
+        const isShell = mode === 'shell';
+        editor.setOption('mode', mode);
+        editor.setOption('foldGutter', isShell ? {} : {
+          rangeFinder: new CodeMirror.fold.combine(CodeMirror.fold.indent, CodeMirror.fold.comment)
+        });
+        editor.setOption('gutters', isShell ? [] : ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]);
+      }
+
+      editor.on('copy', (cm, e) => {
+        e.codemirrorIgnore = true;
+      });
+
+      editor.on("change", (event) => {
+        const value = event.getValue();
+        MessageInvoker.postMessage(value);
+      });
+      editor.refresh();
+      function searchText(){
+        editor.execCommand('findPersistent');
+      }
+      function clearSearchText(){
+        editor.execCommand('clearSearch');
+      }
+
+</script>
+</body>
+</html>

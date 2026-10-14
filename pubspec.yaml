@@ -84,7 +84,7 @@ flutter:
   assets:
     - assets/scan.json
     - assets/images/
-    - assets/codemirror.html
+    - assets/codemirror/
 flutter_app_name:
   name: "青龙客户端"
 
