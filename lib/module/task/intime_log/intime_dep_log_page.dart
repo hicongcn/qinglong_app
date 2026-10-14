@@ -171,6 +171,10 @@ class _InTimeDepLogPageState extends State<InTimeDepLogPage>
   void onLazyLoad() {
     alwaysAuthScroll = SpUtil.getBool(spLogAutoJump2Bottom, defValue: false);
     if (widget.needTimer) {
+      // 先取消可能已存在的定时器：若页面是在「回到前台」回调之后才首次加载，
+      // 生命周期回调可能已经建过一个定时器，直接覆盖会让旧定时器失去引用继续跑
+      // （变成双倍轮询，白耗流量与电量）。
+      _timer?.cancel();
       _timer = Timer.periodic(
         const Duration(seconds: 2),
         (timer) {
