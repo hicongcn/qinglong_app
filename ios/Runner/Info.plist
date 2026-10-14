@@ -54,6 +54,8 @@
 					<string>UIWindowScene</string>
 					<key>UISceneConfigurationName</key>
 					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>SceneDelegate</string>
 					<key>UISceneStoryboardFile</key>
 					<string>Main</string>
 				</dict>
