@@ -11,6 +11,7 @@ import 'package:qinglong_app/base/single_account_page.dart';
 import 'package:qinglong_app/base/sp_const.dart';
 import 'package:qinglong_app/base/theme.dart';
 import 'package:qinglong_app/base/ui/bottom_nav_bar.dart';
+import 'package:qinglong_app/base/ui/lazy_indexed_stack.dart';
 import 'package:qinglong_app/main.dart';
 import 'package:qinglong_app/module/config/config_page.dart';
 import 'package:qinglong_app/module/env/env_page.dart';
@@ -208,12 +209,6 @@ class HomePageState extends ConsumerState<HomePage> {
   GlobalKey<EnvPageState> envKey = GlobalKey();
   GlobalKey<OtherPageState> meKey = GlobalKey();
 
-  /// 已访问过的 tab 下标。首次点开才构建对应页面 —— 原来 4 个 tab 会在
-  /// App 启动时同时构建并各自发起首屏请求（任务/环境变量/配置文件/我的），
-  /// 既拖慢启动又白占内存。默认 0（任务页）是首屏，故预置。
-  /// 已构建的 tab 之后一直保留，滚动位置与已加载数据的行为与 IndexedStack 一致。
-  final Set<int> _visitedTabs = {0};
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -228,10 +223,11 @@ class HomePageState extends ConsumerState<HomePage> {
             RepaintBoundary(
               child: Scaffold(
                 extendBody: true,
-                body: Builder(builder: (context) {
-                  final currentIndex = ref.watch<int>(SingleAccountPageState.ofHomeIndexProvider(context)(getProviderName(context)));
-                  _visitedTabs.add(currentIndex);
-                  final pages = <Widget>[
+                // 只构建「访问过」的 tab（详见 LazyIndexedStack 的注释：
+                // 占位必须保持定位态，否则 Stack 会塌成 0 尺寸导致白屏）
+                body: LazyIndexedStack(
+                  index: ref.watch<int>(SingleAccountPageState.ofHomeIndexProvider(context)(getProviderName(context))),
+                  children: [
                     TaskPage(
                       key: taskKey,
                       loading: !getSystemBeanSuccess,
@@ -243,19 +239,8 @@ class HomePageState extends ConsumerState<HomePage> {
                     OtherPage(
                       key: meKey,
                     ),
-                  ];
-                  return IndexedStack(
-                    index: currentIndex,
-                    children: List<Widget>.generate(
-                      pages.length,
-                      (i) => _visitedTabs.contains(i)
-                          ? Positioned.fill(
-                              child: pages[i],
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                  );
-                }),
+                  ],
+                ),
                 bottomNavigationBar: ClipRect(
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
