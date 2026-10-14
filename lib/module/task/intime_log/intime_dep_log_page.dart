@@ -49,6 +49,17 @@ class _InTimeDepLogPageState extends State<InTimeDepLogPage>
   bool isRequest = false;
   bool canRequest = true;
 
+  /// 当前是否停在底部。必须在**替换内容之前**判断 —— 替换后
+  /// maxScrollExtent 就变了，判断会失真。
+  bool _isAtBottom() {
+    final ScrollController? c = controller;
+    if (c == null || !c.hasClients) return true;
+    final ScrollPosition p = c.position;
+    if (!p.hasContentDimensions) return true;
+    return p.pixels >= p.maxScrollExtent - 24;
+  }
+
+
   getLogData() async {
     if (!canRequest) return;
     if (isRequest) return;
@@ -66,8 +77,11 @@ class _InTimeDepLogPageState extends State<InTimeDepLogPage>
             jsonDecode(response.bean ?? "{}") as Map<String, dynamic>;
 
         List<dynamic> list = data["log"] as List<dynamic>;
+        final bool wasAtBottom = _isAtBottom();
         content = list.join("\n");
-        if (alwaysAuthScroll) {
+        // 只有「用户本来就在底部」且开了跟随时才自动滚到底。
+        // 用户滚上去看历史时别把他拽走 —— 那正是「页面自己动了」的来源。
+        if (alwaysAuthScroll && wasAtBottom) {
           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
             if ((controller?.hasClients ?? false)) {
               controller!.jumpTo(controller!.position.maxScrollExtent);
@@ -84,6 +98,7 @@ class _InTimeDepLogPageState extends State<InTimeDepLogPage>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
+    controller?.dispose();
     super.dispose();
   }
 
@@ -169,7 +184,12 @@ class _InTimeDepLogPageState extends State<InTimeDepLogPage>
 
   @override
   void onLazyLoad() {
-    alwaysAuthScroll = SpUtil.getBool(spLogAutoJump2Bottom, defValue: false);
+    // 读出来的值要同步到 UI，否则 FAB 图标会显示「未开启」而实际跟随是开着的
+    final bool saved = SpUtil.getBool(spLogAutoJump2Bottom, defValue: false);
+    if (saved != alwaysAuthScroll) {
+      alwaysAuthScroll = saved;
+      if (mounted) setState(() {});
+    }
     if (widget.needTimer) {
       // 先取消可能已存在的定时器：若页面是在「回到前台」回调之后才首次加载，
       // 生命周期回调可能已经建过一个定时器，直接覆盖会让旧定时器失去引用继续跑

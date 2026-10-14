@@ -5,7 +5,6 @@ import 'package:extended_text/extended_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qinglong_app/base/http/http.dart';
 import 'package:qinglong_app/base/ql_app_bar.dart';
 import 'package:qinglong_app/base/single_account_page.dart';
 import 'package:qinglong_app/base/sp_const.dart';
@@ -59,17 +58,43 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
   /// 服务端是否支持增量读取；老服务端不返回 nextOffset 时退回整段刷新
   bool _supportIncremental = true;
 
-  /// 展示文本上限（约 40 万字符）。超长日志每次追加都会**整体重新排版**，
-  /// 这里只保留最近这一段；要全文可以用右上角「分享」导出。
-  static const int _maxDisplayChars = 400000;
+  /// 展示文本上限（约 80 万字符）。超长日志每次追加都要**整体重新排版**，
+  /// 故只保留最近这一段；要全文可以用右上角「分享」导出。
+  ///
+  /// 关键：**只在用户正看着底部时才裁掉头部**（见 [_trim]）。用户正在上面翻看
+  /// 历史时裁剪头部，会让视口里的内容整体上移 —— 表现就是「页面自己动了」。
+  static const int _maxDisplayChars = 800000;
 
-  /// 轮询间隔。增量读取每次只取新增的几十~几千字节，所以可以比原来（2 秒）
-  /// 更勤，观感就接近流式追加而不是「每 2 秒跳一下」。
-  static const Duration _pollInterval = Duration(seconds: 1);
+  /// 硬上限：超过它无论用户在看哪里都必须裁，否则排版开销与内存会失控。
+  static const int _hardMaxDisplayChars = 2000000;
 
-  String _trim(String text) {
-    if (text.length <= _maxDisplayChars) return text;
-    final int cut = text.length - _maxDisplayChars;
+  /// 用户最近一次「手指拖动」滚动的时刻。用来区分「用户主动滚动」与
+  /// 「内容变化 / 框架引起的位移」，后者要被 [_pinOffset] 纠正回去。
+  DateTime? _lastUserScrollAt;
+
+  /// 用户本次会话内是否亲手滚过。
+  ///
+  /// 一旦滚过，就**永久停止自动跟随**（而不是等他重新滚回底部又开始跟随）——
+  /// 用户的原话是「我在看这段日志，别让它自己动」。想恢复跟随就点右下角按钮。
+  bool _userTookOver = false;
+
+  /// [_pinOffset] 的延迟复核定时器
+  Timer? _pinTimer;
+
+  bool get _userScrollingRecently =>
+      _lastUserScrollAt != null &&
+      DateTime.now().difference(_lastUserScrollAt!) < const Duration(milliseconds: 500);
+
+  /// 轮询间隔。保持 2 秒 —— 每次只取新增的几十~几千字节，所以即便间隔不变，
+  /// 观感也从「整段替换」变成「连续追加」，而且不会像 1 秒那样刷得过勤。
+  static const Duration _pollInterval = Duration(seconds: 2);
+
+  /// 超长时裁掉头部。`allowTrim=false`（用户正在翻看历史）时只受硬上限约束，
+  /// 保证视口里的内容不会因为裁剪而移动。
+  String _trim(String text, {required bool allowTrim}) {
+    final int limit = allowTrim ? _maxDisplayChars : _hardMaxDisplayChars;
+    if (text.length <= limit) return text;
+    final int cut = text.length - limit;
     final int nl = text.indexOf('\n', cut);
     return text.substring(nl >= 0 ? nl + 1 : cut);
   }
@@ -82,9 +107,47 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
     return p.pixels >= p.maxScrollExtent - 24;
   }
 
+  double? _offsetOf() {
+    final ScrollController? c = controller;
+    if (c == null || !c.hasClients) return null;
+    final ScrollPosition p = c.position;
+    if (!p.hasContentDimensions) return null;
+    return p.pixels;
+  }
+
+  /// 未开启跟随时把视口钉在原处。
+  ///
+  /// 正常情况下内容增长**不会**移动视口（ScrollPosition 的 pixels 保持不动、
+  /// 新内容接在下面），但文本重排、滚动条、选择区 bringIntoView 等边缘情况
+  /// 有可能让它漂移 —— 一旦漂移，用户正在看的那段日志就被顶走了。
+  ///
+  /// 这里做一层兜底：只在用户没有主动滚动时，把 pixels 恢复回去。
+  /// 检查两次（提交后的那一帧 + 150ms 后），因为有些位移发生在下一帧。
+  void _pinOffset(double? before) {
+    if (before == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _pinOnce(before));
+    _pinTimer?.cancel();
+    _pinTimer = Timer(const Duration(milliseconds: 150), () => _pinOnce(before));
+  }
+
+  void _pinOnce(double before) {
+    if (!mounted) return;
+    if (alwaysAuthScroll) return;
+    if (_userScrollingRecently) return;
+    final ScrollController? c = controller;
+    if (c == null || !c.hasClients) return;
+    final ScrollPosition p = c.position;
+    if (!p.hasContentDimensions) return;
+    final double target = before.clamp(0.0, p.maxScrollExtent);
+    if ((p.pixels - target).abs() > 0.5) {
+      c.jumpTo(target);
+    }
+  }
+
   /// 平滑跟到底部。原来每次轮询都无条件 200ms 线性 animateTo，
   /// 配合 2 秒间隔就是「一顿一顿」；现在只在真有新内容、且用户本来就在底部时触发。
   void _scrollToBottom() {
+    if (_userTookOver) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final ScrollController? c = controller;
@@ -150,6 +213,7 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
 
     // 必须在追加**之前**取：追加后 maxScrollExtent 变了就判断不准了
     final bool wasAtBottom = _isAtBottom();
+    final double? offsetBefore = _offsetOf();
 
     final String raw = chunk.content;
     final String next = fullFetch ? raw : ((content ?? "") + raw);
@@ -158,7 +222,8 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
     if (chunk.nextOffset != null) _nextOffset = chunk.nextOffset!;
 
     final bool changed = !hadLoaded || next != (content ?? "");
-    content = _trim(next);
+    // 用户在看底部时允许裁掉头部（他看不到），否则只受硬上限约束
+    content = _trim(next, allowTrim: wasAtBottom || fullFetch);
 
     // 没有新内容就什么都不做 —— 不再空 setState、不再空滚一次
     if (!changed) return;
@@ -168,7 +233,11 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
     unawaited(_maybeAutoInstallDep(raw));
 
     if (alwaysAuthScroll && wasAtBottom) {
+      // 用户开了跟随、且本来就在底部：平滑跟到最新
       _scrollToBottom();
+    } else if (!wasAtBottom) {
+      // 用户正在翻看历史：把视口钉住，任何非用户引起的位移都恢复回去
+      _pinOffset(offsetBefore);
     }
   }
 
@@ -178,6 +247,8 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
+    _pinTimer?.cancel();
+    controller?.dispose();
     super.dispose();
   }
 
@@ -216,6 +287,10 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
           onPressed: () {
             setState(() {
               alwaysAuthScroll = !alwaysAuthScroll;
+              if (alwaysAuthScroll) {
+                // 用户明确要求跟随，清掉「已接管」状态
+                _userTookOver = false;
+              }
             });
             // 打开跟随时立刻到底，不必等下一次轮询
             if (alwaysAuthScroll) _scrollToBottom();
@@ -247,7 +322,17 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
                 ? const Center(
                     child: LoadingWidget(),
                   )
-                : CupertinoScrollbar(
+                : NotificationListener<ScrollNotification>(
+                    onNotification: (ScrollNotification n) {
+                      // 只认「手指拖动」引起的更新：既用于区分用户滚动与内容变化，
+                      // 也用于判断「用户已经自己接管了滚动」
+                      if (n is ScrollUpdateNotification && n.dragDetails != null) {
+                        _lastUserScrollAt = DateTime.now();
+                        _userTookOver = true;
+                      }
+                      return false;
+                    },
+                    child: CupertinoScrollbar(
                     child: SingleChildScrollView(
                       controller: controller,
                       child: Padding(
@@ -267,6 +352,7 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
                       ),
                     ),
                   ),
+                  ),
           ),
         ),
       );
@@ -275,7 +361,13 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
 
   @override
   void onLazyLoad() {
-    alwaysAuthScroll = SpUtil.getBool(spLogAutoJump2Bottom, defValue: false);
+    // 读出来的值必须同步到 UI：否则 FAB 图标会一直显示「未开启」，
+    // 而实际跟随是开着的 —— 用户会以为「我没点它，页面却自己滚」。
+    final bool saved = SpUtil.getBool(spLogAutoJump2Bottom, defValue: false);
+    if (saved != alwaysAuthScroll) {
+      alwaysAuthScroll = saved;
+      if (mounted) setState(() {});
+    }
     if (widget.needTimer) {
       // 先取消可能已存在的定时器：若页面是在「回到前台」回调之后才首次加载，
       // 生命周期回调可能已经建过一个定时器，直接覆盖会让旧定时器失去引用继续跑
