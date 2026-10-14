@@ -22,29 +22,20 @@ class Api {
 
   Api(this.index);
 
+  /// 日志删除频率：2.19+ 起 /api/system/log/remove 已移除，统一走系统配置
+  /// （响应结构 data.info.logRemoveFrequency）。
   Future<HttpResponse<LogDelBean>> logDel() async {
-    final url = getIt<Url>(instanceName: index.toString());
-    final http = getIt<Http>(instanceName: index.toString());
-
-    // 2.19+ 起 /api/system/log/remove 已移除，日志删除频率改从系统配置里读
-    // （响应结构 data.info.logRemoveFrequency）；老服务端没有该接口，失败后回退老路径。
-    var response = await http.get<LogDelBean>(url.systemConfig, {});
-    if (response.success) {
-      return response;
-    }
-    return await http.get<LogDelBean>(url.logDel, {});
+    return await getIt<Http>(instanceName: index.toString()).get<LogDelBean>(
+      getIt<Url>(instanceName: index.toString()).systemConfig,
+      {},
+    );
   }
 
   Future<HttpResponse<String>> logDelTime(int time) async {
-    final url = getIt<Url>(instanceName: index.toString());
-    final http = getIt<Http>(instanceName: index.toString());
-
-    // 见 logDel：新接口的字段名也变了（frequency → logRemoveFrequency）
-    var response = await http.put<String>(url.logRemoveFrequency, {"logRemoveFrequency": time});
-    if (response.success) {
-      return response;
-    }
-    return await http.put<String>(url.logDel, {"frequency": time});
+    return await getIt<Http>(instanceName: index.toString()).put<String>(
+      getIt<Url>(instanceName: index.toString()).logRemoveFrequency,
+      {"logRemoveFrequency": time},
+    );
   }
 
   Future<HttpResponse<SystemBean>> system() async {
@@ -328,22 +319,12 @@ class Api {
     );
   }
 
+  /// 配置文件内容：2.19+ 起 /api/configs/<文件名> 已下线（410），改用 /api/configs/detail?path=
   Future<HttpResponse<String>> content(String name) async {
-    final url = getIt<Url>(instanceName: index.toString());
-    final http = getIt<Http>(instanceName: index.toString());
-
-    if (url.useDetailReadApi) {
-      // 2.19+：GET /api/configs/detail?path=<文件名>
-      return await http.get<String>(url.configsDetail, {"path": name});
-    }
-
-    // 老路径 /api/configs/<文件名> 在 2.19+ 固定返回 410
-    final legacy = await http.get<String>(url.configContent + name, null);
-    if (!legacy.success && legacy.code == 410) {
-      url.markDetailReadApi();
-      return await http.get<String>(url.configsDetail, {"path": name});
-    }
-    return legacy;
+    return await getIt<Http>(instanceName: index.toString()).get<String>(
+      getIt<Url>(instanceName: index.toString()).configsDetail,
+      {"path": name},
+    );
   }
 
   Future<HttpResponse<NullResponse>> saveFile(String name, String content) async {
@@ -437,45 +418,19 @@ class Api {
         serializationName: getIt<SystemBean>(instanceName: index.toString()).isUpperVersion2_12_2() ? "data" : "dirs");
   }
 
-  /// 单次读取日志的最大字节数（服务端上限 1MiB；不传 limit 时默认只回 256KiB）
+  /// 单次读取日志的最大字节数（服务端上限 1MiB；不传 limit 时默认只回 256KiB 的尾部）
   static const String _logChunkLimit = "1048576";
 
+  /// 读取日志详情：2.19+ 起 <文件名> 不再是路径段，改为查询参数 file=
   Future<HttpResponse<String>> taskLogDetail(String name, String path) async {
-    final url = getIt<Url>(instanceName: index.toString());
-    final http = getIt<Http>(instanceName: index.toString());
-
-    if (url.useDetailReadApi) {
-      // 2.19+：文件名为查询参数，不再是路径段
-      return await http.get<String>(url.logsDetail, {
+    return await getIt<Http>(instanceName: index.toString()).get<String>(
+      getIt<Url>(instanceName: index.toString()).logsDetail,
+      {
         "file": name,
         "path": path,
         "limit": _logChunkLimit,
-      });
-    }
-
-    // 老路径 /api/logs/<文件名> 在 2.19+ 固定返回 410
-    final HttpResponse<String> legacy;
-    if (getIt<SystemBean>(instanceName: index.toString()).isUpperVersion2_13_0()) {
-      legacy = await http.get<String>(
-        url.taskLogDetail + name + "?path=" + path,
-        null,
-      );
-    } else {
-      legacy = await http.get<String>(
-        url.taskLogDetail + path + "/" + name,
-        null,
-      );
-    }
-
-    if (!legacy.success && legacy.code == 410) {
-      url.markDetailReadApi();
-      return await http.get<String>(url.logsDetail, {
-        "file": name,
-        "path": path,
-        "limit": _logChunkLimit,
-      });
-    }
-    return legacy;
+      },
+    );
   }
 
   Future<HttpResponse<List<ScriptData>>> scripts() async {
@@ -532,33 +487,15 @@ class Api {
     );
   }
 
+  /// 脚本内容：2.19+ 起 /api/scripts/<文件名> 已下线（410），改用 /api/scripts/detail?file=&path=
   Future<HttpResponse<String>> scriptDetail(String name, String? path) async {
-    final url = getIt<Url>(instanceName: index.toString());
-    final http = getIt<Http>(instanceName: index.toString());
-
-    if (url.useDetailReadApi) {
-      // 2.19+：GET /api/scripts/detail?file=<文件名>&path=<目录>
-      return await http.get<String>(url.scriptsDetail, {
+    return await getIt<Http>(instanceName: index.toString()).get<String>(
+      getIt<Url>(instanceName: index.toString()).scriptsDetail,
+      {
         "file": name,
         "path": path ?? "",
-      });
-    }
-
-    // 老路径 /api/scripts/<文件名> 在 2.19+ 固定返回 410
-    final legacy = await http.get<String>(
-      url.scriptDetailForReadFile + name,
-      {
-        "path": path,
       },
     );
-    if (!legacy.success && legacy.code == 410) {
-      url.markDetailReadApi();
-      return await http.get<String>(url.scriptsDetail, {
-        "file": name,
-        "path": path ?? "",
-      });
-    }
-    return legacy;
   }
 
   Future<HttpResponse<List<DependencyBean>>> dependencies(String type) async {

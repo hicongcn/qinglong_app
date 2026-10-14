@@ -18,8 +18,6 @@ class Url {
 
   static const updatePassword = "/api/user";
 
-  get logDel => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/log/remove" : "/api/system/log/remove";
-
   get tasks => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/crons" : "/api/crons";
 
   get subscribes => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/subscriptions" : "/api/subscriptions";
@@ -56,8 +54,6 @@ class Url {
 
   get files => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/configs/files" : "/api/configs/files";
 
-  get configContent => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/configs/" : "/api/configs/";
-
   get saveFile => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/configs/save" : "/api/configs/save";
 
   get envs => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/envs" : "/api/envs";
@@ -76,8 +72,6 @@ class Url {
 
   get taskLog => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/logs" : "/api/logs";
 
-  get taskLogDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/logs/" : "/api/logs/";
-
   get scripts => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts/files" : "/api/scripts/files";
 
   get scripts2 => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts" : "/api/scripts";
@@ -85,7 +79,6 @@ class Url {
   get scriptUpdate => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts" : "/api/scripts";
 
   get scriptDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts" : "/api/scripts";
-  get scriptDetailForReadFile => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts/" : "/api/scripts/";
 
   get dependencies => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/dependencies" : "/api/dependencies";
 
@@ -102,27 +95,20 @@ class Url {
 
   get checkUpdate => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/update-check" : "/api/system/update-check";
 
-  // ── 2.19+ 起，按文件名读内容的三个老接口固定返回 410，改用 detail 系列 ──
-  // （服务端原文：「接口已下线，请使用 /logs/detail 接口」等）
+  // ── 按文件名读内容的三个老接口（/api/logs/<文件>、/api/scripts/<文件>、
+  //    /api/configs/<文件>）已被服务端下线（固定 410），统一改用 detail 系列。
+  //    仅支持新版本青龙：不再保留老路径探测与回退。──
   get logsDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/logs/detail" : "/api/logs/detail";
 
   get scriptsDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts/detail" : "/api/scripts/detail";
 
   get configsDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/configs/detail" : "/api/configs/detail";
 
-  // 2.19+ 起 /api/system/log/remove 已移除：频率改读系统配置、改走 config/log-remove-frequency
+  // /api/system/log/remove 已被移除：频率改读系统配置、改走 config/log-remove-frequency
   get systemConfig => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/config" : "/api/system/config";
 
   get logRemoveFrequency =>
       getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/config/log-remove-frequency" : "/api/system/config/log-remove-frequency";
-
-  /// 该服务端是否已启用 detail 读取接口。
-  /// 初值为 false（先按老接口请求），一旦收到 410 就置为 true，之后不再重复试老接口。
-  bool _useDetailReadApi = false;
-
-  bool get useDetailReadApi => _useDetailReadApi;
-
-  void markDetailReadApi() => _useDetailReadApi = true;
 
   get appkeys => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/apps" : "/api/apps";
 
