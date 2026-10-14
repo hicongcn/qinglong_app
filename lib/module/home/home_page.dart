@@ -223,10 +223,12 @@ class HomePageState extends ConsumerState<HomePage> {
             RepaintBoundary(
               child: Scaffold(
                 extendBody: true,
-                // 只构建「访问过」的 tab（详见 LazyIndexedStack 的注释：
-                // 占位必须保持定位态，否则 Stack 会塌成 0 尺寸导致白屏）
+                // 任务 / 环境变量 / 配置文件 三页在启动时就构建并各自加载数据，
+                // 只有「我的」按需构建。占位必须保持定位态，否则 Stack 会塌成
+                // 0 尺寸导致白屏（详见 LazyIndexedStack 的注释）
                 body: LazyIndexedStack(
                   index: ref.watch<int>(SingleAccountPageState.ofHomeIndexProvider(context)(getProviderName(context))),
+                  initialIndexes: const <int>{0, 1, 2},
                   children: [
                     TaskPage(
                       key: taskKey,

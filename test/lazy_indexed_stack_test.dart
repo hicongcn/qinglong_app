@@ -54,6 +54,36 @@ void main() {
     expect(find.text('page 2'), findsOneWidget);
   });
 
+  testWidgets("initialIndexes 指定的多个 tab 在启动时就构建（任务/环境变量/配置文件）", (tester) async {
+    final built = <int>[];
+    List<Widget> pages() => List<Widget>.generate(
+          4,
+          (i) => Builder(
+            key: ValueKey('page-$i'),
+            builder: (_) {
+              built.add(i);
+              return ColoredBox(color: Colors.white, child: Text('page $i'));
+            },
+          ),
+        );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LazyIndexedStack(
+            index: 0,
+            initialIndexes: const <int>{0, 1, 2},
+            children: pages(),
+          ),
+        ),
+      ),
+    );
+
+    expect(built.toSet().containsAll(<int>{0, 1, 2}), isTrue,
+        reason: "首页要求任务/环境变量/配置文件在开 App 时同步加载（各自发起首屏请求）");
+    expect(built.contains(3), isFalse, reason: "「我的」仍应按需构建");
+  });
+
   testWidgets("尺寸不得塌陷：body 必须撑满可用高度（白屏回归护栏）", (tester) async {
     const double kHeight = 600;
 

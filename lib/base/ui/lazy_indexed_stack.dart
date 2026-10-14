@@ -19,14 +19,19 @@ class LazyIndexedStack extends StatefulWidget {
     Key? key,
     required this.index,
     required this.children,
-    this.initialIndex = 0,
+    this.initialIndexes = const <int>{0},
   }) : super(key: key);
 
   final int index;
   final List<Widget> children;
 
-  /// 启动时就需要构建的下标（首页首屏为 0）
-  final int initialIndex;
+  /// 启动时就构建（＝各自发起首屏请求）的下标集合，其余按需构建。
+  ///
+  /// 首页传 `{0, 1, 2}`：任务、环境变量、配置文件三页在开 App 时就加载数据
+  /// （用户明确要求「任务与环境变量同步加载」；配置文件页还要承接
+  /// 「编辑配置文件」快捷入口 —— 那页只有在被构建时才会读取该动作），
+  /// 只有「我的」按需构建。
+  final Set<int> initialIndexes;
 
   @override
   State<LazyIndexedStack> createState() => _LazyIndexedStackState();
@@ -38,7 +43,7 @@ class _LazyIndexedStackState extends State<LazyIndexedStack> {
   @override
   void initState() {
     super.initState();
-    _visited = <int>{widget.initialIndex};
+    _visited = <int>{...widget.initialIndexes};
   }
 
   @override

@@ -11,6 +11,7 @@ import 'package:qinglong_app/module/others/dependencies/dependency_bean.dart';
 import 'package:qinglong_app/module/others/login_log/login_log_bean.dart';
 import 'package:qinglong_app/module/others/task_log/task_log_bean.dart';
 import 'package:qinglong_app/module/others/update/check_update_bean.dart';
+import 'package:qinglong_app/module/task/intime_log/intime_log_chunk.dart';
 
 import '../../module/task/TaskBean2.dart';
 import '../ui/tree/models/script_data.dart';
@@ -201,6 +202,27 @@ class Api {
         "password": password,
       },
     );
+  }
+
+  /// 读取运行中任务的实时日志（分片）。
+  ///
+  /// - 首次 `tail: true`：取文件尾部（服务端默认只回 256KiB，这里要 1MiB）；
+  /// - 之后带上一次返回的 `nextOffset`：**只取新增的那段**，
+  ///   这样轮询可以做得很勤（1 秒）而流量极小，观感接近流式。
+  Future<InTimeLogChunk> inTimeLogChunk(
+    String cron, {
+    int? offset,
+    bool tail = false,
+  }) async {
+    final query = <String, String?>{"limit": _logChunkLimit};
+    if (tail || offset == null) {
+      query["tail"] = "true";
+    } else {
+      query["offset"] = offset.toString();
+    }
+    final envelope = await getIt<Http>(instanceName: index.toString())
+        .getEnvelope(getIt<Url>(instanceName: index.toString()).intimeLog(cron), query);
+    return InTimeLogChunk.fromEnvelope(envelope);
   }
 
   Future<HttpResponse<String>> inTimeLog(String cron) async {

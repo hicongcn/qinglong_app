@@ -88,6 +88,28 @@ class Http {
     }
   }
 
+  /// 取「整个响应信封」。
+  ///
+  /// 现有 [get] 只能拿到 `serializationName` 指向的那一个字段，而日志分片接口
+  /// （`/api/crons/:id/log`）除了 `data` 还要用 `nextOffset` / `total` /
+  /// `truncated` 来做增量读取，故单独开一个口子。失败返回 null
+  /// （错误按既有逻辑处理，例如 401 会触发退出登录）。
+  Future<Map<String, dynamic>?> getEnvelope(
+    String uri,
+    Map<String, String?>? json,
+  ) async {
+    try {
+      _init();
+      final response = await _dio!.get(uri, queryParameters: json);
+      final data = response.data;
+      if (data is Map) return data.cast<String, dynamic>();
+      return null;
+    } on DioError catch (e) {
+      exceptionHandler<NullResponse>(e, uri);
+      return null;
+    }
+  }
+
   Future<HttpResponse<T>> post<T>(
     String uri,
     dynamic json, {

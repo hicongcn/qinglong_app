@@ -35,6 +35,9 @@ void main() {
   String initMode = "ok";
   late List<String> initBodies;
 
+  /// 运行中任务的日志文件内容（测试里可以追加，模拟任务持续输出）
+  String logBody = "";
+
   setUpAll(() async {
     // flutter_test 默认拦截网络（一律返回 400），这里放行，改用本机 mock 服务
     HttpOverrides.global = null;
@@ -50,6 +53,36 @@ void main() {
 
       // 读掉请求体（顺便留下 init 的 body 供断言），避免连接复用异常
       final String body = await utf8.decoder.bind(req).join();
+
+      // 运行中任务的实时日志（支持 offset/limit/tail，回 nextOffset）
+      if (RegExp(r'^/api/crons/\d+/log$').hasMatch(path)) {
+        final bool tail = uri.queryParameters['tail'] == 'true';
+        final int? offset = int.tryParse(uri.queryParameters['offset'] ?? '');
+        if (tail) {
+          _send(req, {
+            "code": 200,
+            "data": logBody,
+            "logStatus": "running",
+            "offset": 0,
+            "nextOffset": logBody.length,
+            "total": logBody.length,
+            "truncated": false,
+          });
+        } else {
+          final int start = (offset ?? 0).clamp(0, logBody.length);
+          final String delta = logBody.substring(start);
+          _send(req, {
+            "code": 200,
+            "data": delta,
+            "logStatus": "running",
+            "offset": start,
+            "nextOffset": start + delta.length,
+            "total": logBody.length,
+            "truncated": start > 0,
+          });
+        }
+        return;
+      }
 
       switch (path) {
         case "/api/logs/detail":
@@ -150,6 +183,7 @@ void main() {
     requests = <String>[];
     initBodies = <String>[];
     initMode = "ok";
+    logBody = "";
     final getIt = GetIt.instance;
     // get_it 7.x 的 reset() 是异步的（要等 dispose 完成才真正清空），
     // 不 await 会把下面刚注册的实例又清掉。
@@ -230,6 +264,43 @@ void main() {
       requests.single,
       startsWith("PUT /api/system/config/log-remove-frequency?"),
     );
+  });
+
+  test("实时日志：首帧 tail 取整段，之后带 nextOffset 只取增量", () async {
+    logBody = "line1\nline2\n";
+    final api = Api(0);
+
+    final first = await api.inTimeLogChunk("1", tail: true);
+    expect(first.success, isTrue, reason: first.message ?? "");
+    expect(first.content, "line1\nline2\n");
+    expect(first.nextOffset, logBody.length);
+    expect(first.supportIncremental, isTrue);
+    expect(requests.single, contains("tail=true"));
+    expect(requests.single, contains("limit=1048576"),
+        reason: "服务端默认只回 256KiB，实时日志要 1MiB");
+
+    // 任务又输出了两行
+    requests.clear();
+    logBody += "line3\n";
+    final second = await api.inTimeLogChunk("1", offset: first.nextOffset);
+
+    expect(second.success, isTrue, reason: second.message ?? "");
+    expect(second.content, "line3\n", reason: "增量请求应当只拿到新增内容");
+    expect(second.nextOffset, logBody.length);
+    expect(requests.single, contains("offset=12"));
+    expect(requests.single, isNot(contains("tail=true")));
+  });
+
+  test("实时日志：文件被轮转时 nextOffset 会变小（调用方据此整段重取）", () async {
+    logBody = "abcdef";
+    final api = Api(0);
+
+    // offset 超过文件长度 = 日志被清空重写
+    final chunk = await api.inTimeLogChunk("1", offset: 999);
+    expect(chunk.success, isTrue);
+    expect(chunk.content, "");
+    expect(chunk.nextOffset! < 999, isTrue,
+        reason: "nextOffset 比请求的 offset 小，说明文件被轮转，页面应改为整段重取");
   });
 
   test("初始化服务端：PUT /api/user/init，body 为 username/password", () async {
