@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,6 +42,10 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
 
   FocusNode focusNode = FocusNode();
 
+  /// 是否允许同时运行多个实例（服务端默认 0 = 单实例）。
+  /// 关闭时：任务到点触发而上一次还在跑 → 服务端会先终止旧实例再启动新的。
+  bool allowMultipleInstances = false;
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +54,7 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
       _nameController.text = taskBean.name ?? "";
       _commandController.text = taskBean.command ?? "";
       _cronController.text = taskBean.schedule ?? "";
+      allowMultipleInstances = taskBean.allowMultipleInstances == 1;
     } else {
       taskBean = TaskBean();
     }
@@ -183,6 +189,51 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
                     ),
                   ),
                   const SizedBox(
+                    height: 20,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "允许多个实例",
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: ref.watch(themeProvider).themeColor.titleColor(),
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Text(
+                              "关闭时（服务端默认），若任务到点触发而上一次还在运行，服务端会先终止旧实例再启动新的——脚本耗时超过定时间隔时就会一直被打断。这种情况把它打开。",
+                              style: TextStyle(
+                                fontSize: 12,
+                                height: 1.5,
+                                color: ref.watch(themeProvider).themeColor.descColor(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      CupertinoSwitch(
+                        value: allowMultipleInstances,
+                        activeColor: ref.watch(themeProvider).primaryColor,
+                        onChanged: (value) {
+                          setState(() {
+                            allowMultipleInstances = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
                     height: 30,
                   ),
                   Visibility(
@@ -255,12 +306,23 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
       taskBean.command = _commandController.text.trim();
       taskBean.schedule = _cronController.text.trim();
 
+      // 只在「要开启」或「服务端本来就有这个字段」时才带上它，
+      // 免得给不认识该字段的老服务端传未知参数。
+      int? allowValue;
+      if (allowMultipleInstances) {
+        allowValue = 1;
+      } else if (taskBean.allowMultipleInstances != null) {
+        allowValue = 0;
+      }
+      taskBean.allowMultipleInstances = allowValue;
+
       await EasyLoading.show(status: " 提交中");
       HttpResponse<NullResponse> response = await SingleAccountPageState.ofApi(context).addTask(
         _nameController.text,
         _commandController.text.trim(),
         _cronController.text.trim(),
         id: taskBean.id,
+        allowMultipleInstances: allowValue,
       );
       await EasyLoading.dismiss();
       if (response.success) {

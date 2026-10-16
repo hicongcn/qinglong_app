@@ -25,6 +25,11 @@ class TaskBean {
   String? updatedAt;
   String? createdAt;
 
+  /// 是否允许同时运行多个实例（服务端字段 `allow_multiple_instances`，1=允许 / 0=单实例）。
+  /// 服务端默认 0。**为 0 时，任务到点触发而上一次实例还在运行，服务端会先终止旧实例
+  /// 再启动新的**（见 `back/shared/runCron.ts`），表现为"任务跑一会儿自己停了"。
+  int? allowMultipleInstances;
+
   TaskBean(
       {this.name,
       this.command,
@@ -64,6 +69,7 @@ class TaskBean {
       lastExecutionTime = int.tryParse(json['last_execution_time'].toString());
       lastRunningTime = json['last_running_time'];
       pid = json['pid'].toString();
+      allowMultipleInstances = json['allow_multiple_instances'];
     } catch (e) {
       logger.e(e);
     }
@@ -88,6 +94,7 @@ class TaskBean {
     data['last_execution_time'] = this.lastExecutionTime;
     data['last_running_time'] = this.lastRunningTime;
     data['pid'] = this.pid;
+    data['allow_multiple_instances'] = this.allowMultipleInstances;
     return data;
   }
 

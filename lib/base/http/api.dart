@@ -248,13 +248,25 @@ class Api {
   }
 
   /// 新增/修改任务。新版服务端主键是 number，修改时传 `id`（不再有 `_id`）。
+  /// 新建 / 更新任务。
+  ///
+  /// [allowMultipleInstances]：1 = 允许同时运行多个实例，0 = 单实例（服务端默认）。
+  /// 传 null 则**不带该字段**，服务端沿用原值 —— 老服务端不认识它，不确定时宁可不传。
+  ///
+  /// ⚠️ 单实例模式下（`back/shared/runCron.ts`），任务到点触发时若上一个实例还在跑，
+  /// 服务端会先 `killTask` 掉它再启动新的 —— 这就是"任务自己停了"的根源。
   Future<HttpResponse<NullResponse>> addTask(
     String name,
     String command,
     String cron, {
     int? id,
+    int? allowMultipleInstances,
   }) async {
     var data = <String, dynamic>{"name": name, "command": command, "schedule": cron};
+
+    if (allowMultipleInstances != null) {
+      data["allow_multiple_instances"] = allowMultipleInstances;
+    }
 
     if (id != null) {
       data["id"] = id;

@@ -42,6 +42,9 @@ void main() {
   String restoreMode = "ok";
   late List<String> restoreBodies;
 
+  /// POST/PUT /api/crons 的请求体（用于断言 allow_multiple_instances 有没有带上）
+  late List<String> cronBodies;
+
   setUpAll(() async {
     // flutter_test 默认拦截网络（一律返回 400），这里放行，改用本机 mock 服务
     HttpOverrides.global = null;
@@ -194,8 +197,16 @@ void main() {
           _send(req, {"code": 200, "data": {"logRemoveFrequency": 15}});
           return;
 
-        // 任务列表：双层包装
+        // 任务：GET 返回双层包装的列表；POST/PUT 记录请求体（测多实例开关）
         case "/api/crons":
+          if (req.method != "GET") {
+            cronBodies.add(body);
+            _send(req, {
+              "code": 200,
+              "message": req.method == "POST" ? "创建成功" : "更新成功",
+            });
+            return;
+          }
           _send(req, {
             "code": 200,
             "data": {
@@ -208,6 +219,7 @@ void main() {
                   "status": 0,
                   "isPinned": 0,
                   "isDisabled": 0,
+                  "allow_multiple_instances": 1,
                 }
               ],
               "total": 1,
@@ -251,6 +263,7 @@ void main() {
     logBody = "";
     restoreBodies = <String>[];
     restoreMode = "ok";
+    cronBodies = <String>[];
     final getIt = GetIt.instance;
     // get_it 7.x 的 reset() 是异步的（要等 dispose 完成才真正清空），
     // 不 await 会把下面刚注册的实例又清掉。
@@ -483,6 +496,47 @@ void main() {
     expect(res.code, 409,
         reason: "这三个接口用的是真实 HTTP 状态码，而不是惯例的 200 + body code");
     expect(res.message, contains("文件已变化"));
+  });
+
+  test("任务解析出 allow_multiple_instances（服务端默认 0）", () async {
+    final api = Api(0);
+    final res = await api.crons2_13_09();
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(res.bean!.data!.first.allowMultipleInstances, 1,
+        reason: "该字段是 0/1，服务端默认 0（单实例）");
+  });
+
+  test("新建任务：开启「允许多个实例」时 body 带 allow_multiple_instances=1", () async {
+    final api = Api(0);
+    final res = await api.addTask("demo", "task demo.js", "0 0 * * *", allowMultipleInstances: 1);
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(requests.single, startsWith("POST /api/crons"));
+    final sent = jsonDecode(cronBodies.single) as Map<String, dynamic>;
+    expect(sent["allow_multiple_instances"], 1);
+    expect(sent["name"], "demo");
+  });
+
+  test("新建任务：不传该字段时 body 里不能出现它（避免给老服务端传未知参数）", () async {
+    final api = Api(0);
+    final res = await api.addTask("demo", "task demo.js", "0 0 * * *");
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    final sent = jsonDecode(cronBodies.single) as Map<String, dynamic>;
+    expect(sent.containsKey("allow_multiple_instances"), isFalse,
+        reason: "传 null 时必须整个字段都不出现，服务端才会沿用原值");
+  });
+
+  test("更新任务：关闭多实例时 body 带 0（id 一并提交）", () async {
+    final api = Api(0);
+    final res = await api.addTask("demo", "task demo.js", "0 0 * * *", id: 7, allowMultipleInstances: 0);
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(requests.single, startsWith("PUT /api/crons"));
+    final sent = jsonDecode(cronBodies.single) as Map<String, dynamic>;
+    expect(sent["id"], 7);
+    expect(sent["allow_multiple_instances"], 0);
   });
 
   test("任务列表：解开 data.data 双层包装，且只传 searchValue", () async {
