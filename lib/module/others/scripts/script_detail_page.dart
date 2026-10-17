@@ -171,9 +171,9 @@ class _ScriptDetailPageState extends ConsumerState<ScriptDetailPage> with LazyLo
           title: "下载",
           onTap: () async {
             try {
-              // 文件名就是脚本名（原先前面会拼一个随机数，用户拿到手对不上号）。
-              // writeDownloadFile 内部对同名文件是先删后写，不存在覆盖确认问题。
-              String name = widget.title;
+              // 文件名 = 脚本原名 + 时间戳（插在扩展名前）。
+              // 直接用原名会覆盖上一次的下载（writeDownloadFile 对同名文件先删后写）。
+              final String name = FileUtil.timestampedName(widget.title);
               await FileUtil(0).writeDownloadFile(name, content ?? "");
               "已写入qinglong_app文件夹下,文件名$name".toast2();
             } catch (e) {

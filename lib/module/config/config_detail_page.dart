@@ -116,8 +116,9 @@ class _ConfigDetailPageState extends ConsumerState<ConfigDetailPage> with LazyLo
                   title: "下载",
                   onTap: () async {
                     try {
-                      // 文件名与配置文件同名（原先会拼随机数前缀）
-                      final String name = widget.bean.title ?? "config";
+                      // 文件名 = 原名 + 时间戳（插在扩展名前），避免覆盖上一次下载
+                      final String name = FileUtil.timestampedName(
+                          widget.bean.title ?? "config");
                       var file = await FileUtil(0).writeDownloadFile(name, sourceContent ?? "");
                       "已写入qinglong_app文件夹下,文件名$name".toast2();
                     } catch (e) {

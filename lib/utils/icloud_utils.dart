@@ -257,6 +257,21 @@ class FileUtil {
     return DateFormat('HH-mm-ss').format(DateTime.now());
   }
 
+  /// 给下载文件名加时间戳，插在**扩展名之前**。
+  ///
+  /// `writeDownloadFile` 对同名文件是「先删后写」，所以直接用原名会让第二次下载
+  /// 覆盖上一次的文件。加时间戳既能保持"看得出是哪个脚本"，又不会互相覆盖。
+  ///
+  /// `demo.js` → `demo_20261017_093000.js`；`demo` → `demo_20261017_093000`
+  static String timestampedName(String fileName) {
+    final int dot = fileName.lastIndexOf('.');
+    // dot > 0：跳过 `dot == 0`（形如 ".gitignore" 的隐藏文件）和没有点的情况
+    final String stem = dot > 0 ? fileName.substring(0, dot) : fileName;
+    final String ext = dot > 0 ? fileName.substring(dot) : '';
+    final String stamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    return "${stem}_$stamp$ext";
+  }
+
   String getHost() {
     String? temp =
         getIt<UserInfoViewModel>(instanceName: index.toString()).host;
