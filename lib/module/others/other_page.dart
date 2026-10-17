@@ -251,54 +251,53 @@ class OtherPageState extends ConsumerState<OtherPage>
                 // ⛔ 板块名是「青龙设置」（用户指定）。
                 _gridCard(null, <Widget>[ // 青龙侧（服务端能力）
                   _cell("仪表盘",
-                      icon: CupertinoIcons.chart_bar_alt_fill,
+                      icon: Icons.dashboard_outlined,
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
                               builder: (context) => const DashboardPage()))),
                   _cell("订阅管理",
-                      asset: "assets/images/icon_subsctibe.png",
+                      icon: Icons.subscriptions,
                       onTap: () => Navigator.of(context)
                           .pushNamed(Routes.routeSubscribeList)),
                   _cell("脚本管理",
-                      asset: "assets/images/icon_s.png",
+                      icon: Icons.description_outlined,
                       onTap: () =>
                           Navigator.of(context).pushNamed(Routes.routeScript)),
                   _cell("依赖管理",
-                      icon: CupertinoIcons.cube_box,
+                      icon: Icons.extension_outlined,
                       onTap: () =>
                           Navigator.of(context).pushNamed(Routes.routeDependency)),
                   _cell("任务日志",
-                      asset: "assets/images/icon_task_log.png",
+                      icon: Icons.receipt_long_outlined,
                       onTap: () =>
                           Navigator.of(context).pushNamed(Routes.routeTaskLog)),
                   _cell("登录日志",
-                      asset: "assets/images/icon_login_icon.png",
+                      icon: Icons.login,
                       onTap: _loginLog),
                   _cell("系统日志",
-                      icon: CupertinoIcons.doc_plaintext,
+                      icon: Icons.terminal,
                       onTap: () => Navigator.of(context).push(CupertinoPageRoute(
                           builder: (context) => const SystemLogPage()))),
                   _cell("通知日志",
-                      icon: CupertinoIcons.bell,
+                      icon: Icons.notifications_none,
                       onTap: () => Navigator.of(context).push(CupertinoPageRoute(
                           builder: (context) => const NotifyLogPage()))),
                   _cell("通知设置",
-                      icon: CupertinoIcons.envelope,
+                      icon: Icons.mail_outline,
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
                               builder: (context) => const PushSettingPage()))),
                   _cell("应用密钥",
-                      icon: Icons.vpn_key,
+                      icon: Icons.vpn_key_outlined,
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
                               builder: (context) => const AppKeyPage()))),
                   _cell("两步验证",
-                      icon: CupertinoIcons.lock_shield,
+                      icon: Icons.security,
                       onTap: () => Navigator.of(context).push(CupertinoPageRoute(
                           builder: (context) => const TwoFactorPage()))),
-                  // 日志清理频率并入了「面板设置」页，这里不再单列
                   _cell("面板设置",
-                      icon: CupertinoIcons.slider_horizontal_3,
+                      icon: Icons.tune,
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
                               builder: (context) =>
@@ -308,31 +307,29 @@ class OtherPageState extends ConsumerState<OtherPage>
                   height: 12,
                 ),
                 _gridCard(null, <Widget>[ // App 侧（客户端能力）
-                  // 扫描依赖跑的是服务端的 dependencies 接口，但它是「检查本机脚本缺哪些包」的
-                  // 客户端动作，按用户要求放在 App 侧。
                   _cell("扫描依赖",
-                      icon: CupertinoIcons.doc_text_search,
+                      icon: Icons.search,
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
                               builder: (context) => const ScanPage()))),
                   _cell("多账号数",
-                      icon: CupertinoIcons.infinite, onTap: _multiAccount),
+                      icon: Icons.all_inclusive, onTap: _multiAccount),
                   _cell("账号排序",
-                      icon: CupertinoIcons.arrow_swap, onTap: _sortAccount),
+                      icon: Icons.swap_vert, onTap: _sortAccount),
                   _cell("字体大小",
-                      icon: CupertinoIcons.textformat_size,
+                      icon: Icons.format_size,
                       onTap: () => Navigator.of(context).push(CupertinoPageRoute(
                           builder: (context) => const TextSizePage()))),
                   _cell("文件备份",
-                      icon: CupertinoIcons.cloud_upload,
+                      icon: Icons.cloud_upload_outlined,
                       onTap: () =>
                           Navigator.of(context).pushNamed(Routes.routeICloud)),
                   _cell("系统设置",
-                      asset: "assets/images/icon_safety.png",
+                      icon: Icons.settings_outlined,
                       onTap: () =>
                           Navigator.of(context).pushNamed(Routes.routeSetting)),
                   _cell("关于软件",
-                      asset: "assets/images/icon_about.png",
+                      icon: Icons.info_outline,
                       onTap: () =>
                           Navigator.of(context).pushNamed(Routes.routeAbout)),
                 ]),
@@ -514,10 +511,13 @@ class OtherPageState extends ConsumerState<OtherPage>
   }
 
   /// 网格里的一个按钮：图标 + 文字，等宽等高。
+  /// 网格里的一个按钮：图标 + 文字，等宽等高。
+  ///
+  /// 全部用 Material 内置图标：面板那套 `ql-icon-*` 是在线 iconfont，字体文件不在仓库里，
+  /// 搬不过来；之前混用 png + Cupertino + Material，字重和留白都不一致。
   Widget _cell(
     String title, {
-    IconData? icon,
-    String? asset,
+    required IconData icon,
     required VoidCallback onTap,
   }) {
     final Color primary = ref.watch(themeProvider).primaryColor;
@@ -531,21 +531,9 @@ class OtherPageState extends ConsumerState<OtherPage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // png 图标自带内边距（视觉上偏小），字体图标没有；
-            // 所以两者给的盒子一样高，但 png 画得更大一点，看起来才一样粗。
             SizedBox(
-              height: 34,
-              child: asset != null
-                  ? ColorFiltered(
-                      colorFilter: ColorFilter.mode(primary, BlendMode.srcIn),
-                      child: Image.asset(
-                        asset,
-                        width: 34,
-                        height: 34,
-                        fit: BoxFit.contain,
-                      ),
-                    )
-                  : Icon(icon, color: primary, size: 28),
+              height: 30,
+              child: Icon(icon, color: primary, size: 26),
             ),
             const SizedBox(
               height: 7,
