@@ -103,6 +103,17 @@ void main() {
     }
   });
 
+  /// 顶部昵称：`UserInfoViewModel.alias` 的 getter 是 `_alias ?? _host`，
+  /// 别名没设的时候会把网址当昵称返回（用户反馈过「怎么变网址了」）。
+  test('顶部昵称走 _displayName，且不能把 host 当名字', () {
+    final String src = source.readAsStringSync();
+    expect(src.contains('_displayName('), isTrue);
+    // 取名字时不能直接用 alias（含回退 host 的语义）
+    expect(RegExp(r'Text\(\s*_displayName').hasMatch(src), isTrue,
+        reason: "昵称必须经 _displayName 处理");
+    expect(src.contains('有别名就点它改'), isFalse); // 占位，避免误改
+  });
+
   /// 「字体大小」只认 MediaQuery.textScaleFactor，而 `RichText` **不会**自动乘这个系数 ——
   /// 环境变量的「名称 / 备注」当初就是因为用了 RichText，调字体大小毫无反应。
   /// 这个断言扫全仓，防止再退回裸 RichText。

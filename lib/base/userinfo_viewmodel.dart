@@ -52,6 +52,16 @@ class UserInfoViewModel {
         .updateToken(index, _host, _token, _useSecertLogined, alias);
   }
 
+  /// 只改别名，token / host 原样保留。
+  ///
+  /// 为什么不直接用 [updateToken]：它要求把 token 一起传进来，漏传就等于把登录态清了。
+  /// 这里内部把当前值带上，同时写内存和本地账号记录（TokenBean）。
+  void updateAlias(int index, String? alias) {
+    _alias = alias;
+    getIt<MultiAccountUserInfoViewModel>()
+        .updateToken(index, _host, _token, _useSecertLogined, alias);
+  }
+
   void updateUserName(String host, String userName, String password,
       bool secretLogin, String? alias) {
     _host = host;

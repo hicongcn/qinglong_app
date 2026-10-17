@@ -176,27 +176,38 @@ class OtherPageState extends ConsumerState<OtherPage>
                                   Row(
                                     children: [
                                       Flexible(
-                                        child: Text(
-                                          (SingleAccountPageState.ofUserInfo(
-                                                              context)
-                                                          .alias ==
-                                                      null ||
-                                                  SingleAccountPageState
-                                                          .ofUserInfo(context)
-                                                      .alias!
-                                                      .isEmpty)
-                                              ? userName
-                                              : SingleAccountPageState
-                                                      .ofUserInfo(context)
-                                                  .alias!,
-                                          maxLines: 1,
-                                          style: TextStyle(
-                                            color: ref
-                                                .watch(themeProvider)
-                                                .themeColor
-                                                .titleColor(),
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w600,
+                                        child: GestureDetector(
+                                          behavior: HitTestBehavior.opaque,
+                                          onTap: () => _editAlias(context),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  _displayName(context),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    color: ref
+                                                        .watch(themeProvider)
+                                                        .themeColor
+                                                        .titleColor(),
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Icon(
+                                                CupertinoIcons.pencil,
+                                                size: 13,
+                                                color: ref
+                                                    .watch(themeProvider)
+                                                    .themeColor
+                                                    .descColor(),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                         fit: FlexFit.loose,
@@ -578,6 +589,67 @@ class OtherPageState extends ConsumerState<OtherPage>
       return;
     }
     Navigator.of(context).pushNamed(Routes.routeLoginLog);
+  }
+
+  /// 顶部要显示的名字。
+  ///
+  /// ⚠️ 不能直接读 `UserInfoViewModel.alias`：那个 getter 是 `_alias ?? _host`，
+  /// 别名没设的时候会把**网址**当成昵称返回（用户反馈过"怎么变网址了"）。
+  /// 这里按「别名 → 面板用户名 → 青龙客户端」取，host 不作为显示名。
+  String _displayName(BuildContext context) {
+    final info = SingleAccountPageState.ofUserInfo(context);
+    final String alias = (info.alias ?? "").trim();
+    final String host = (info.host ?? "").trim();
+    if (alias.isNotEmpty && alias != host) return alias;
+    final String name = userName.trim();
+    if (name.isNotEmpty && name != "青龙客户端") return name;
+    return "青龙客户端";
+  }
+
+  /// 点名字改别名。登录时没填别名、或想换一个，都在这里。
+  void _editAlias(BuildContext context) {
+    final info = SingleAccountPageState.ofUserInfo(context);
+    final int index = SingleAccountPageState.of(context)?.index ?? 0;
+    final String current = (info.alias ?? "") == (info.host ?? "")
+        ? ""
+        : (info.alias ?? "");
+    final TextEditingController controller =
+        TextEditingController(text: current != info.host ? current : "");
+    showCupertinoDialog(
+      useRootNavigator: false,
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text("修改备注名"),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            textAlign: TextAlign.center,
+            decoration: const InputDecoration(hintText: "例如 新elm"),
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text("取消", style: TextStyle(color: Color(0xff999999))),
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          CupertinoDialogAction(
+            child: Text(
+              "保存",
+              style: TextStyle(color: ref.watch(themeProvider).primaryColor),
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              final String value = controller.text.trim();
+              // 传 null 而不是空串：getter 会回退到 host，空串会显示成空白
+              info.updateAlias(index, value.isEmpty ? null : value);
+              setState(() {});
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   /// 默认用户头像（原按 VIP 等级区分，现已统一）
