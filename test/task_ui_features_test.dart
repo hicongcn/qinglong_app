@@ -58,6 +58,18 @@ void main() {
     expect(detail.contains('队列中'), isTrue, reason: '任务详情页未显示排队中');
   });
 
+  test('任务详情页有「运行 / 停止」入口（startCron/stopCron 不能是死代码）', () {
+    final String page =
+        File('lib/module/task/task_detail/task_detail_page.dart').readAsStringSync();
+    expect(page.contains('startCron'), isTrue);
+    expect(page.contains('stopCron'), isTrue);
+    // 方法早就写好了，但曾经没挂到菜单上 —— 用调用点断言，防止再退回去
+    expect(page.contains('startCron(context, ref)'), isTrue,
+        reason: 'startCron 只有定义、没有调用点，等于没有入口');
+    expect(page.contains('stopCron(context, ref)'), isTrue,
+        reason: 'stopCron 只有定义、没有调用点，等于没有入口');
+  });
+
   test('任务编辑支持额外调度规则（服务端 extra_schedules）', () {
     final String bean = File('lib/module/task/task_bean.dart').readAsStringSync();
     expect(bean.contains('extraSchedules'), isTrue);
