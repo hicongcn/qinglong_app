@@ -345,7 +345,7 @@ class _SettingPageState extends ConsumerState<SettingPage> {
               ],
             ),
             const SizedBox(
-              height: 20,
+              height: 12,
             ),
             Container(
               margin: const EdgeInsets.symmetric(
@@ -494,25 +494,11 @@ class _SettingPageState extends ConsumerState<SettingPage> {
                       ],
                     ),
                   ),
-            const SizedBox(
-              height: 15,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 30,
-              ),
-              child: Text(
-                "服务器",
-                style: TextStyle(
-                  color: ref.watch(themeProvider).themeColor.descColor(),
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Container(
+            // 「变更服务器版本号」只在手动指定版本时有意义。自动获取模式下
+            // 整块不渲染 —— 之前只隐藏了里面的条目、标题还在，页面上就多出
+            // 一个只有「服务器」三个字的空卡片。
+            if (!(systemBean.fromAutoGet ?? false))
+              Container(
               margin: const EdgeInsets.symmetric(
                 horizontal: 15,
               ),
