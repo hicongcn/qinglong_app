@@ -45,7 +45,7 @@ class _SettingPageState extends ConsumerState<SettingPage> {
     return Scaffold(
       backgroundColor: ref.watch(themeProvider).themeColor.bg2Color(),
       appBar: QlAppBar(
-        title: "系统设置",
+        title: "设置",
       ),
       body: SingleChildScrollView(
         primary: true,
@@ -555,13 +555,35 @@ class _SettingPageState extends ConsumerState<SettingPage> {
                       ],
                     ),
                   ),
-                  Visibility(
-                    visible: !(systemBean.fromAutoGet ?? false),
-                    child: const Divider(
-                      indent: 55,
-                      height: 1,
-                    ),
-                  ),
+            const SizedBox(
+              height: 15,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 30,
+              ),
+              child: Text(
+                "服务器",
+                style: TextStyle(
+                  color: ref.watch(themeProvider).themeColor.descColor(),
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            Container(
+              margin: const EdgeInsets.symmetric(
+                horizontal: 15,
+              ),
+              decoration: BoxDecoration(
+                color: ref.watch(themeProvider).themeColor.settingBordorColor(),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
@@ -713,6 +735,9 @@ class _SettingPageState extends ConsumerState<SettingPage> {
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
                 ],
               ),
             ),
