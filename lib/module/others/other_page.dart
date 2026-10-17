@@ -242,9 +242,11 @@ class OtherPageState extends ConsumerState<OtherPage>
                 const SizedBox(
                   height: 12,
                 ),
-                // 三个板块、每行四个按钮。条目数不足 4 的整数倍时由 _gridRow 补空位，
-                // 保证列宽恒定 —— 原来用 Expanded(flex:2) 手工排，2 个条目和 4 个条目列宽不一样。
-                _gridCard("管理", <Widget>[
+                // 两个板块，按"功能归属"划分，不按重要性：
+                //   青龙 = 面板（服务端）的能力；App 设置 = 这台手机上的能力。
+                // ⛔ 不要把服务端功能放进 App 板块，反之亦然（用户明确要求过）。
+                // 每行四个，两个板块各 8 个、正好各两行。
+                _gridCard("青龙", <Widget>[
                   _cell("订阅管理",
                       asset: "assets/images/icon_subsctibe.png",
                       onTap: () => Navigator.of(context)
@@ -253,15 +255,6 @@ class OtherPageState extends ConsumerState<OtherPage>
                       asset: "assets/images/icon_s.png",
                       onTap: () =>
                           Navigator.of(context).pushNamed(Routes.routeScript)),
-                  _cell("多账号数",
-                      icon: CupertinoIcons.infinite, onTap: _multiAccount),
-                  _cell("账号排序",
-                      icon: CupertinoIcons.arrow_swap, onTap: _sortAccount),
-                ]),
-                const SizedBox(
-                  height: 12,
-                ),
-                _gridCard("面板", <Widget>[
                   _cell("运行概览",
                       icon: CupertinoIcons.chart_bar_alt_fill,
                       onTap: () => Navigator.of(context).push(
@@ -278,13 +271,21 @@ class OtherPageState extends ConsumerState<OtherPage>
                   _cell("登录日志",
                       asset: "assets/images/icon_login_icon.png",
                       onTap: _loginLog),
+                  _cell("扫描依赖",
+                      icon: CupertinoIcons.doc_text_search,
+                      onTap: () => Navigator.of(context).push(
+                          CupertinoPageRoute(
+                              builder: (context) => const ScanPage()))),
+                  _cell("日志设置",
+                      icon: CupertinoIcons.gobackward_30,
+                      onTap: () => _delLog(context)),
                 ]),
                 const SizedBox(
                   height: 12,
                 ),
-                _gridCard("应用设置", <Widget>[
-                  _cell("应用设置",
-                      icon: CupertinoIcons.gear_alt,
+                _gridCard("App 设置", <Widget>[
+                  _cell("应用密钥",
+                      icon: Icons.vpn_key,
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
                               builder: (context) => const AppKeyPage()))),
@@ -293,13 +294,10 @@ class OtherPageState extends ConsumerState<OtherPage>
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
                               builder: (context) => const PushSettingPage()))),
-                  _cell("日志设置",
-                      icon: CupertinoIcons.gobackward_30,
-                      onTap: () => _delLog(context)),
-                  _cell("系统设置",
-                      asset: "assets/images/icon_safety.png",
-                      onTap: () =>
-                          Navigator.of(context).pushNamed(Routes.routeSetting)),
+                  _cell("多账号数",
+                      icon: CupertinoIcons.infinite, onTap: _multiAccount),
+                  _cell("账号排序",
+                      icon: CupertinoIcons.arrow_swap, onTap: _sortAccount),
                   _cell("字体大小",
                       icon: CupertinoIcons.textformat_size,
                       onTap: () => Navigator.of(context).push(CupertinoPageRoute(
@@ -308,11 +306,10 @@ class OtherPageState extends ConsumerState<OtherPage>
                       icon: CupertinoIcons.cloud_upload,
                       onTap: () =>
                           Navigator.of(context).pushNamed(Routes.routeICloud)),
-                  _cell("扫描依赖",
-                      icon: CupertinoIcons.doc_text_search,
-                      onTap: () => Navigator.of(context).push(
-                          CupertinoPageRoute(
-                              builder: (context) => const ScanPage()))),
+                  _cell("系统设置",
+                      asset: "assets/images/icon_safety.png",
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(Routes.routeSetting)),
                   _cell("关于软件",
                       asset: "assets/images/icon_about.png",
                       onTap: () =>
