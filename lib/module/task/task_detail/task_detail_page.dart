@@ -231,22 +231,45 @@ class _TaskDetailPageState extends ConsumerState<TaskDetailPage> with LazyLoadSt
                           // 名称加「_副本」后缀，其它字段（命令 / 定时 / 额外调度 / 多实例）原样带过去。
                           SizedBox(
                             width: MediaQuery.of(context).size.width - 80,
-                            child: CupertinoButton(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 5,
-                              ),
-                              color: Colors.transparent,
-                              child: Text(
-                                "复 制",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: ref.watch(themeProvider).primaryColor,
-                                ),
-                              ),
-                              onPressed: () {
+                            // 和下面红色的「删除」保持同一套视觉：有底色、有描边，
+                            // 只用主色区分轻重（原来是纯文字按钮，看着像没有按钮）
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
                                 copyTask(context);
                               },
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 11),
+                                decoration: BoxDecoration(
+                                  color: ref
+                                      .watch(themeProvider)
+                                      .primaryColor
+                                      .withOpacity(0.10),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: ref
+                                        .watch(themeProvider)
+                                        .primaryColor
+                                        .withOpacity(0.55),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "复 制",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color:
+                                          ref.watch(themeProvider).primaryColor,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
+                          ),
+                          const SizedBox(
+                            height: 10,
                           ),
                           SizedBox(
                             width: MediaQuery.of(context).size.width - 80,

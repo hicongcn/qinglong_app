@@ -407,9 +407,11 @@ class _AboutPageState extends ConsumerState<AboutPage> with LazyLoadState<AboutP
                         ),
                         onTap: () {
                           if (Platform.isAndroid) {
-                            Share.share("分享一款好用的青龙客户端，快去点击下面的链接地址下载吧 https://t.me/qinglongapp");
+                            shareTextContent(context,
+                                "分享一款好用的青龙客户端，快去点击下面的链接地址下载吧 https://t.me/qinglongapp");
                           } else {
-                            Share.share("分享一款好用的青龙客户端，快去美区 AppStore 搜索『青龙客户端』或者点击下面的链接地址下载吧 https://apps.apple.com/us/app/id1625871665");
+                            shareTextContent(context,
+                                "分享一款好用的青龙客户端，快去美区 AppStore 搜索『青龙客户端』或者点击下面的链接地址下载吧 https://apps.apple.com/us/app/id1625871665");
                           }
                         },
                         child: Padding(

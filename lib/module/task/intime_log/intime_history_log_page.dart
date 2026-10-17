@@ -11,6 +11,7 @@ import 'package:qinglong_app/base/single_account_page.dart';
 import 'package:qinglong_app/base/ui/lazy_load_state.dart';
 import 'package:qinglong_app/base/ui/loading_widget.dart';
 import 'package:qinglong_app/utils/extension.dart';
+import 'package:qinglong_app/utils/icloud_utils.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../base/cupertino_sheet.dart';
@@ -72,7 +73,20 @@ class _InTimeHistoryLogPageState extends State<InTimeHistoryLogPage> with LazyLo
                   CupertinoSheer(
                     title: "分享",
                     onTap: () async {
-                      Share.share(content ?? "");
+                      shareTextContent(context, content);
+                    },
+                  ),
+                  addDivider(),
+                  CupertinoSheer(
+                    title: "下载",
+                    onTap: () async {
+                      try {
+                        final String name = FileUtil.timestampedName(widget.title);
+                        await FileUtil(0).writeDownloadFile(name, content ?? "");
+                        "已写入qinglong_app文件夹下,文件名$name".toast2();
+                      } catch (e) {
+                        e.toString().toast();
+                      }
                     },
                   ),
                   addDivider(),

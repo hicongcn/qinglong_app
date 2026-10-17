@@ -108,7 +108,7 @@ class _ConfigDetailPageState extends ConsumerState<ConfigDetailPage> with LazyLo
                 CupertinoSheer(
                   title: "分享",
                   onTap: () {
-                    Share.share(sourceContent ?? "");
+                    shareTextContent(context, sourceContent);
                   },
                 ),
                 addDivider(),

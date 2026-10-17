@@ -13,6 +13,7 @@ import 'package:qinglong_app/base/ui/loading_widget.dart';
 import 'package:qinglong_app/module/scan_page.dart';
 import 'package:qinglong_app/module/task/intime_log/intime_log_chunk.dart';
 import 'package:qinglong_app/utils/extension.dart';
+import 'package:qinglong_app/utils/icloud_utils.dart';
 import 'package:qinglong_app/utils/sp_utils.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -278,6 +279,22 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
     WidgetsBinding.instance.addObserver(this);
   }
 
+  /// 把当前日志全文写到本地。文件名带时间戳，重复下载不会互相覆盖。
+  Future<void> _downloadLog() async {
+    final String text = content ?? "";
+    if (text.trim().isEmpty) {
+      "日志还没加载完".toast();
+      return;
+    }
+    try {
+      final String name = FileUtil.timestampedName(widget.title);
+      await FileUtil(0).writeDownloadFile(name, text);
+      "已写入qinglong_app文件夹下,文件名$name".toast2();
+    } catch (e) {
+      e.toString().toast();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Builder(builder: (context) {
@@ -306,8 +323,24 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
             CommitButton(
               title: "分享",
               onTap: () {
-                Share.share(content ?? "");
+                shareTextContent(context, content);
               },
+            ),
+            // 下载：把整段日志写到 qinglong_app 文件夹（文件名带时间戳，不覆盖旧的）
+            CupertinoButton(
+              color: Colors.transparent,
+              padding: EdgeInsets.zero,
+              onPressed: _downloadLog,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Center(
+                  child: Icon(
+                    CupertinoIcons.square_arrow_down,
+                    size: 22,
+                    color: Theme.of(context).appBarTheme.iconTheme?.color,
+                  ),
+                ),
+              ),
             ),
           ],
           title: widget.title,

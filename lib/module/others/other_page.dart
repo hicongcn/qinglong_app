@@ -474,7 +474,7 @@ class OtherPageState extends ConsumerState<OtherPage>
     }
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 15),
-      padding: const EdgeInsets.fromLTRB(9, 12, 9, 6),
+      padding: const EdgeInsets.fromLTRB(6, 14, 6, 10),
       decoration: BoxDecoration(
         color: c.settingBordorColor(),
         borderRadius: BorderRadius.circular(10),
@@ -484,7 +484,7 @@ class OtherPageState extends ConsumerState<OtherPage>
         children: [
           Text(
             title,
-            style: TextStyle(fontSize: 12, color: c.descColor()),
+            style: TextStyle(fontSize: 13, color: c.descColor()),
           ),
           const SizedBox(
             height: 2,
@@ -523,33 +523,33 @@ class OtherPageState extends ConsumerState<OtherPage>
       minSize: 0,
       onPressed: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              height: 26,
+              height: 30,
               child: asset != null
                   ? ColorFiltered(
                       colorFilter: ColorFilter.mode(primary, BlendMode.srcIn),
                       child: Image.asset(
                         asset,
-                        width: 26,
-                        height: 26,
+                        width: 30,
+                        height: 30,
                         fit: BoxFit.contain,
                       ),
                     )
-                  : Icon(icon, color: primary, size: 26),
+                  : Icon(icon, color: primary, size: 28),
             ),
             const SizedBox(
-              height: 6,
+              height: 7,
             ),
             Text(
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: c.titleColor()),
+              style: TextStyle(fontSize: 14, color: c.titleColor()),
             ),
           ],
         ),

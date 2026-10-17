@@ -94,31 +94,58 @@ class _ChangeAccountPageState extends ConsumerState<ChangeAccountPage> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemBuilder: (context, index) {
-                      if (index >= getIt<MultiAccountUserInfoViewModel>().tokenBeans.length ||
-                          (getIt<MultiAccountUserInfoViewModel>().tokenBeans.length < count &&
-                              index == count - 1)) {
-                        return addAccount(context, index);
-                      }
+                      try {
+                        final List<TokenBean> beans =
+                            getIt<MultiAccountUserInfoViewModel>().tokenBeans;
+                        if (index >= beans.length ||
+                            (beans.length < count && index == count - 1)) {
+                          return addAccount(context, index);
+                        }
 
-                      var userInfo = getIt<UserInfoViewModel>(instanceName: index.toString());
-                      return GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          context
-                              .findAncestorStateOfType<MultiAccountPageState>()
-                              ?.updateIndex(index);
-                          Navigator.of(
-                            context,
-                          ).pop();
-                        },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            color: ref.watch(themeProvider).themeColor.settingBordorColor(),
-                            child: buildCell(userInfo, index),
+                        // ⚠️ 不要直接 getIt<UserInfoViewModel>(instanceName: index)：
+                        // 该实例是「对应账号的 SingleAccountPage」在 initState 里注册的，
+                        // 没被打开过的账号（多实例时很常见）根本没注册，直接取会抛
+                        // ArgumentError，整个页面被 ErrorWidget 顶掉 —— 就是用户看到的
+                        // 「报错了：请尝试右滑退出页面…」。所以列表数据一律取 TokenBean，
+                        // 运行时对象取不到就降级成只读展示。
+                        final TokenBean bean = beans[index];
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            context
+                                .findAncestorStateOfType<MultiAccountPageState>()
+                                ?.updateIndex(index);
+                            Navigator.of(
+                              context,
+                            ).pop();
+                          },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              color: ref
+                                  .watch(themeProvider)
+                                  .themeColor
+                                  .settingBordorColor(),
+                              child: buildCell(bean, index),
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      } catch (e) {
+                        // 单条渲染失败也不要连累整页
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 15,
+                            vertical: 12,
+                          ),
+                          child: Text(
+                            "这条账号读取失败：$e",
+                            style: const TextStyle(
+                              color: Color(0xffFB5858),
+                              fontSize: 12,
+                            ),
+                          ),
+                        );
+                      }
                     },
                     separatorBuilder: (_, __) {
                       return Container(
@@ -140,15 +167,29 @@ class _ChangeAccountPageState extends ConsumerState<ChangeAccountPage> {
     );
   }
 
-  Widget buildCell(UserInfoViewModel model, int index) {
+  /// 取运行时对象；没注册就返回 null（不抛异常）。
+  UserInfoViewModel? tryUserInfo(int index) {
+    try {
+      return getIt<UserInfoViewModel>(instanceName: index.toString());
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Widget buildCell(TokenBean bean, int index) {
+    final UserInfoViewModel? live = tryUserInfo(index);
+    final String host = (bean.host ?? "").isNotEmpty ? bean.host! : (live?.host ?? "");
+    final String alias = (bean.alias ?? "").isNotEmpty ? bean.alias! : (live?.alias ?? "");
+    final String token = (bean.token ?? "").isNotEmpty ? bean.token! : (live?.token ?? "");
+
     Widget child = ListTile(
       title: Text(
-        model.host ?? "",
+        host,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
-        model.alias ?? "",
+        alias,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -156,7 +197,7 @@ class _ChangeAccountPageState extends ConsumerState<ChangeAccountPage> {
         horizontal: 15,
       ),
       minVerticalPadding: 10,
-      trailing: (model.token != null && model.token!.isNotEmpty)
+      trailing: token.isNotEmpty
           ? Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 5,
@@ -184,12 +225,12 @@ class _ChangeAccountPageState extends ConsumerState<ChangeAccountPage> {
               ),
             ),
     );
-    if (model.host == null || model.host!.isEmpty) {
+    if (host.isEmpty) {
       return child;
     }
 
     return Slidable(
-        key: ValueKey(model.host),
+        key: ValueKey("${host}_$index"),
         endActionPane: ActionPane(
           motion: const StretchMotion(),
           extentRatio: 0.2,
@@ -197,7 +238,7 @@ class _ChangeAccountPageState extends ConsumerState<ChangeAccountPage> {
             SlidableAction(
               backgroundColor: const Color(0xffEA4D3E),
               onPressed: (_) {
-                if (model.token != null && model.token!.isNotEmpty) {
+                if (token.isNotEmpty) {
                   "请先退出登录，再删除".toast();
                   return;
                 }
@@ -229,9 +270,10 @@ class _ChangeAccountPageState extends ConsumerState<ChangeAccountPage> {
                         ),
                         onPressed: () {
                           Navigator.of(childContext).pop();
-                          getIt<MultiAccountUserInfoViewModel>().removeHistoryAccount(model.host);
-                          getIt<UserInfoViewModel>(instanceName: index.toString())
-                              .clearCurrentInfo(index);
+                          getIt<MultiAccountUserInfoViewModel>()
+                              .removeHistoryAccount(host);
+                          // 该账号的运行时对象可能压根没注册，取不到就只清本地记录
+                          tryUserInfo(index)?.clearCurrentInfo(index);
                           setState(() {});
                         },
                       ),

@@ -145,7 +145,7 @@ class _InTimeDepLogPageState extends State<InTimeDepLogPage>
             CommitButton(
               title: "分享",
               onTap: () {
-                Share.share(content ?? "");
+                shareTextContent(context, content);
               },
             ),
           ],

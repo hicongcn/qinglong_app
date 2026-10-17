@@ -10,6 +10,7 @@ import 'package:qinglong_app/base/single_account_page.dart';
 import 'package:qinglong_app/base/sp_const.dart';
 import 'package:qinglong_app/base/ui/lazy_load_state.dart';
 import 'package:qinglong_app/base/ui/loading_widget.dart';
+import 'package:qinglong_app/utils/extension.dart';
 import 'package:qinglong_app/utils/sp_utils.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -128,7 +129,7 @@ class _InTimeSubscribeLogPageState extends State<InTimeSubscribeLogPage> with La
             CommitButton(
               title: "分享",
               onTap: () {
-                Share.share(content ?? "");
+                shareTextContent(context, content);
               },
             ),
           ],
