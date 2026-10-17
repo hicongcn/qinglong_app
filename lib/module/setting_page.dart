@@ -111,6 +111,8 @@ class _SettingPageState extends ConsumerState<SettingPage> {
       ),
       body: SingleChildScrollView(
         primary: true,
+        // 底部留出余量，最后一项不至于贴着屏幕边缘
+        padding: const EdgeInsets.only(bottom: 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
