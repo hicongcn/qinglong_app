@@ -17,7 +17,6 @@ import 'package:qinglong_app/module/others/two_factor/two_factor_page.dart';
 import 'package:qinglong_app/module/others/change_account_page.dart';
 import 'package:qinglong_app/module/others/sort_account_page.dart';
 import 'package:qinglong_app/module/others/text_size_page.dart';
-import 'package:qinglong_app/module/others/update_password_page.dart';
 import 'package:qinglong_app/utils/extension.dart';
 import 'package:qinglong_app/utils/icloud_utils.dart';
 import 'package:qinglong_app/utils/sp_utils.dart';
@@ -93,7 +92,7 @@ class OtherPageState extends ConsumerState<OtherPage>
               children: [
                 Container(
                   width: MediaQuery.of(context).size.width,
-                  height: 250,
+                  height: 190,
                   decoration: BoxDecoration(
                     image: (ref.watch(themeProvider).themeMode == modeDark)
                         ? null
@@ -237,561 +236,88 @@ class OtherPageState extends ConsumerState<OtherPage>
                         ),
                       ),
                       const Spacer(),
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 15),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: ref
-                              .watch(themeProvider)
-                              .themeColor
-                              .settingBordorColor(),
-                        ),
-                        child: Row(
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Column(
-                                children: [
-                                  const SizedBox(
-                                    height: 10,
-                                  ),
-                                  CupertinoButton(
-                                    padding: EdgeInsets.zero,
-                                    onPressed: () {
-                                      Navigator.of(context).pushNamed(
-                                        Routes.routeSubscribeList,
-                                      );
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 15,
-                                        vertical: 10,
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Image.asset(
-                                            "assets/images/icon_subsctibe.png",
-                                            width: 30,
-                                            fit: BoxFit.cover,
-                                          ),
-                                          const SizedBox(
-                                            height: 5,
-                                          ),
-                                          Text(
-                                            "订阅管理",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: ref
-                                                  .watch(themeProvider)
-                                                  .themeColor
-                                                  .titleColor(),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    height: 10,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Column(
-                                children: [
-                                  const SizedBox(
-                                    height: 10,
-                                  ),
-                                  CupertinoButton(
-                                    padding: EdgeInsets.zero,
-                                    onPressed: () {
-                                      Navigator.of(context).pushNamed(
-                                        Routes.routeScript,
-                                      );
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 15,
-                                        vertical: 10,
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Image.asset(
-                                            "assets/images/icon_s.png",
-                                            width: 30,
-                                            fit: BoxFit.cover,
-                                          ),
-                                          const SizedBox(
-                                            height: 5,
-                                          ),
-                                          Text(
-                                            "脚本管理",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: ref
-                                                  .watch(themeProvider)
-                                                  .themeColor
-                                                  .titleColor(),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    height: 10,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Column(
-                                children: [
-                                  const SizedBox(
-                                    height: 10,
-                                  ),
-                                  CupertinoButton(
-                                    padding: EdgeInsets.zero,
-                                    onPressed: () {
-                                      Navigator.of(context).pushNamed(
-                                        Routes.routeDependency,
-                                      );
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 15,
-                                        vertical: 10,
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Image.asset(
-                                            "assets/images/icon_d.png",
-                                            width: 30,
-                                            fit: BoxFit.cover,
-                                          ),
-                                          const SizedBox(
-                                            height: 5,
-                                          ),
-                                          Text(
-                                            "依赖管理",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: ref
-                                                  .watch(themeProvider)
-                                                  .themeColor
-                                                  .titleColor(),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    height: 10,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),
                 const SizedBox(
-                  height: 20,
+                  height: 12,
                 ),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: ref
-                        .watch(themeProvider)
-                        .themeColor
-                        .settingBordorColor(),
-                  ),
-                  width: MediaQuery.of(context).size.width,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 15,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(
-                        height: 5,
-                      ),
-                      Text(
-                        "多帐号设置",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: ref
-                              .watch(themeProvider)
-                              .themeColor
-                              .titleColor(),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      // 原来这里是一个 4 列网格格子 + 三个 Spacer ——
-                      // 只有一项却占满宽度，右边全空。改成整行列表项。
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          if (SpUtil.getBool(spSingleInstance,
-                              defValue: false)) {
-                            '请先进入 系统设置 关闭单实例模式'.toast();
-                            return;
-                          }
-                          Navigator.of(context).push(
-                            CupertinoPageRoute(
-                              builder: (context) =>
-                                  const UpdateMaxAccountPage(),
-                            ),
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 6,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                CupertinoIcons.infinite,
-                                color: ref.watch(themeProvider).primaryColor,
-                                size: 20,
-                              ),
-                              const SizedBox(
-                                width: 15,
-                              ),
-                              Text(
-                                "多账号数",
-                                style: TextStyle(
-                                  color: ref
-                                      .watch(themeProvider)
-                                      .themeColor
-                                      .titleColor(),
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const Spacer(),
-                              Icon(
-                                CupertinoIcons.right_chevron,
-                                size: 16,
-                                color: ref
-                                    .watch(themeProvider)
-                                    .themeColor
-                                    .descColor(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // 三个板块、每行四个按钮。条目数不足 4 的整数倍时由 _gridRow 补空位，
+                // 保证列宽恒定 —— 原来用 Expanded(flex:2) 手工排，2 个条目和 4 个条目列宽不一样。
+                _gridCard("管理", <Widget>[
+                  _cell("订阅管理",
+                      asset: "assets/images/icon_subsctibe.png",
+                      onTap: () => Navigator.of(context)
+                          .pushNamed(Routes.routeSubscribeList)),
+                  _cell("脚本管理",
+                      asset: "assets/images/icon_s.png",
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(Routes.routeScript)),
+                  _cell("多账号数",
+                      icon: CupertinoIcons.infinite, onTap: _multiAccount),
+                  _cell("账号排序",
+                      icon: CupertinoIcons.arrow_swap, onTap: _sortAccount),
+                ]),
                 const SizedBox(
-                  height: 20,
+                  height: 12,
                 ),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: ref
-                        .watch(themeProvider)
-                        .themeColor
-                        .settingBordorColor(),
-                  ),
-                  width: MediaQuery.of(context).size.width,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 15,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(
-                        height: 5,
-                      ),
-                      Text(
-                        "面板",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: ref
-                              .watch(themeProvider)
-                              .themeColor
-                              .titleColor(),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: buildOtherFun2(
-                                "运行概览", CupertinoIcons.chart_bar_alt_fill, () {
-                              Navigator.of(context).push(
-                                CupertinoPageRoute(
-                                  builder: (context) => const DashboardPage(),
-                                ),
-                              );
-                            }),
-                          ),
-                          Expanded(
-                            child: buildOtherFun2(
-                                "两步验证", CupertinoIcons.lock_shield, () {
-                              Navigator.of(context).push(
-                                CupertinoPageRoute(
-                                  builder: (context) => const TwoFactorPage(),
-                                ),
-                              );
-                            }),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 5,
-                      ),
-                    ],
-                  ),
-                ),
+                _gridCard("面板", <Widget>[
+                  _cell("运行概览",
+                      icon: CupertinoIcons.chart_bar_alt_fill,
+                      onTap: () => Navigator.of(context).push(
+                          CupertinoPageRoute(
+                              builder: (context) => const DashboardPage()))),
+                  _cell("两步验证",
+                      icon: CupertinoIcons.lock_shield,
+                      onTap: () => Navigator.of(context).push(CupertinoPageRoute(
+                          builder: (context) => const TwoFactorPage()))),
+                  _cell("任务日志",
+                      asset: "assets/images/icon_task_log.png",
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(Routes.routeTaskLog)),
+                  _cell("登录日志",
+                      asset: "assets/images/icon_login_icon.png",
+                      onTap: _loginLog),
+                ]),
                 const SizedBox(
-                  height: 20,
+                  height: 12,
                 ),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: ref
-                        .watch(themeProvider)
-                        .themeColor
-                        .settingBordorColor(),
-                  ),
-                  width: MediaQuery.of(context).size.width,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 15,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(
-                        height: 5,
-                      ),
-                      Text(
-                        "工具",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: ref
-                              .watch(themeProvider)
-                              .themeColor
-                              .titleColor(),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: buildOtherFun2(
-                                "扫描依赖", CupertinoIcons.doc_text_search, () {
-                              Navigator.of(context).push(
-                                CupertinoPageRoute(
-                                  builder: (context) => const ScanPage(),
-                                ),
-                              );
-                            }),
-                          ),
-                          Expanded(
-                            child: buildOtherFun2(
-                              "字体大小",
-                              CupertinoIcons.textformat_size,
-                              () {
-                                Navigator.of(context).push(
-                                  CupertinoPageRoute(
-                                      builder: (context) =>
-                                          const TextSizePage()),
-                                );
-                              },
-                            ),
-                          ),
-                          Expanded(
-                            child: buildOtherFun2(
-                                "文件备份", CupertinoIcons.cloud_upload, () {
-                              Navigator.of(context)
-                                  .pushNamed(Routes.routeICloud);
-                            }),
-                          ),
-                          Expanded(
-                            child: SpUtil.getBool(spSingleInstance,
-                                    defValue: false)
-                                ? const SizedBox.shrink()
-                                : buildOtherFun2(
-                                    "账号排序", CupertinoIcons.arrow_swap, () {
-                                    Navigator.of(context).push(
-                                      CupertinoPageRoute(
-                                        builder: (context) =>
-                                            const SortAccountPage(),
-                                      ),
-                                    );
-                                  }),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(
-                  height: 20,
-                ),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: ref
-                        .watch(themeProvider)
-                        .themeColor
-                        .settingBordorColor(),
-                  ),
-                  width: MediaQuery.of(context).size.width,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 15,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(
-                        height: 5,
-                      ),
-                      Text(
-                        "设置",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color:
-                              ref.watch(themeProvider).themeColor.titleColor(),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: buildOtherFun(
-                                "任务日志", "assets/images/icon_task_log.png", () {
-                              Navigator.of(context).pushNamed(
-                                Routes.routeTaskLog,
-                              );
-                            }),
-                          ),
-                          Expanded(
-                            child: buildOtherFun(
-                                "登录日志", "assets/images/icon_login_icon.png",
-                                () {
-                              if (SingleAccountPageState.ofUserInfo(context)
-                                  .useSecretLogined) {
-                                "使用client_id方式登录无法获取登录日志".toast();
-                              } else {
-                                Navigator.of(context).pushNamed(
-                                  Routes.routeLoginLog,
-                                );
-                              }
-                            }),
-                          ),
-                          Expanded(
-                            child: buildOtherFun2(
-                              "应用设置",
-                              CupertinoIcons.gear_alt,
-                              () {
-                                Navigator.of(context).push(CupertinoPageRoute(
-                                    builder: (context) => const AppKeyPage()));
-                              },
-                            ),
-                          ),
-                          Expanded(
-                            child: buildOtherFun2(
-                              "通知设置",
-                              CupertinoIcons.envelope,
-                              () {
-                                Navigator.of(context).push(CupertinoPageRoute(
-                                    builder: (context) =>
-                                        const PushSettingPage()));
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: buildOtherFun2(
-                                "修改密码", CupertinoIcons.lock_shield, () {
-                              if (SingleAccountPageState.ofUserInfo(context)
-                                  .useSecretLogined) {
-                                "使用client_id方式登录无法修改密码".toast();
-                              } else {
-                                Navigator.of(context).push(CupertinoPageRoute(
-                                    builder: (context) =>
-                                        const UpdatePasswordPage()));
-                              }
-                            }),
-                          ),
-                          Expanded(
-                            child: buildOtherFun2(
-                                "日志设置", CupertinoIcons.gobackward_30, () {
-                              _delLog(context);
-                            }),
-                          ),
-                          Expanded(
-                            child: buildOtherFun(
-                              "系统设置",
-                              "assets/images/icon_safety.png",
-                              () {
-                                Navigator.of(context).pushNamed(
-                                  Routes.routeSetting,
-                                );
-                              },
-                            ),
-                          ),
-                          Expanded(
-                            child: buildOtherFun(
-                              "关于软件",
-                              "assets/images/icon_about.png",
-                              () {
-                                Navigator.of(context).pushNamed(
-                                  Routes.routeAbout,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                _gridCard("应用设置", <Widget>[
+                  _cell("应用设置",
+                      icon: CupertinoIcons.gear_alt,
+                      onTap: () => Navigator.of(context).push(
+                          CupertinoPageRoute(
+                              builder: (context) => const AppKeyPage()))),
+                  _cell("通知设置",
+                      icon: CupertinoIcons.envelope,
+                      onTap: () => Navigator.of(context).push(
+                          CupertinoPageRoute(
+                              builder: (context) => const PushSettingPage()))),
+                  _cell("日志设置",
+                      icon: CupertinoIcons.gobackward_30,
+                      onTap: () => _delLog(context)),
+                  _cell("系统设置",
+                      asset: "assets/images/icon_safety.png",
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(Routes.routeSetting)),
+                  _cell("字体大小",
+                      icon: CupertinoIcons.textformat_size,
+                      onTap: () => Navigator.of(context).push(CupertinoPageRoute(
+                          builder: (context) => const TextSizePage()))),
+                  _cell("文件备份",
+                      icon: CupertinoIcons.cloud_upload,
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(Routes.routeICloud)),
+                  _cell("扫描依赖",
+                      icon: CupertinoIcons.doc_text_search,
+                      onTap: () => Navigator.of(context).push(
+                          CupertinoPageRoute(
+                              builder: (context) => const ScanPage()))),
+                  _cell("关于软件",
+                      asset: "assets/images/icon_about.png",
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(Routes.routeAbout)),
+                ]),
                 SizedBox(
                   height: kBottomNavigationBarHeight +
                       MediaQuery.of(context).viewPadding.bottom,
@@ -920,90 +446,126 @@ class OtherPageState extends ConsumerState<OtherPage>
     }
   }
 
-  Widget buildOtherFun(
-    String title,
-    String icon,
-    GestureTapCallback onTap,
-  ) {
+  /// 板块卡片：小标题 + 四列网格。
+  Widget _gridCard(String title, List<Widget> cells) {
+    final ThemeColors c = ref.watch(themeProvider).themeColor;
+    final List<Widget> rows = <Widget>[];
+    for (int i = 0; i < cells.length; i += 4) {
+      final int end = i + 4 > cells.length ? cells.length : i + 4;
+      rows.add(_gridRow(cells.sublist(i, end)));
+    }
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 15),
+      padding: const EdgeInsets.fromLTRB(9, 12, 9, 6),
+      decoration: BoxDecoration(
+        color: c.settingBordorColor(),
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: CupertinoButton(
-        onPressed: onTap,
-        padding: EdgeInsets.zero,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            vertical: 10,
-            horizontal: 3,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(fontSize: 12, color: c.descColor()),
           ),
-          child: Column(
-            children: [
-              ColorFiltered(
-                colorFilter: ColorFilter.mode(
-                    ref.watch(themeProvider).primaryColor, BlendMode.srcIn),
-                child: Image.asset(
-                  icon,
-                  width: 24,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(
-                height: 5,
-              ),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: ref.watch(themeProvider).themeColor.titleColor(),
-                ),
-              ),
-            ],
+          const SizedBox(
+            height: 2,
           ),
+          ...rows,
+        ],
+      ),
+    );
+  }
+
+  /// 一行四列。不足四个的用空 Expanded 补位，列宽因此恒定不变。
+  Widget _gridRow(List<Widget> cells) {
+    final List<Widget> children = <Widget>[];
+    for (int i = 0; i < 4; i++) {
+      children.add(Expanded(
+        child: i < cells.length ? cells[i] : const SizedBox.shrink(),
+      ));
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+
+  /// 网格里的一个按钮：图标 + 文字，等宽等高。
+  Widget _cell(
+    String title, {
+    IconData? icon,
+    String? asset,
+    required VoidCallback onTap,
+  }) {
+    final Color primary = ref.watch(themeProvider).primaryColor;
+    final ThemeColors c = ref.watch(themeProvider).themeColor;
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      minSize: 0,
+      onPressed: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 26,
+              child: asset != null
+                  ? ColorFiltered(
+                      colorFilter: ColorFilter.mode(primary, BlendMode.srcIn),
+                      child: Image.asset(
+                        asset,
+                        width: 26,
+                        height: 26,
+                        fit: BoxFit.contain,
+                      ),
+                    )
+                  : Icon(icon, color: primary, size: 26),
+            ),
+            const SizedBox(
+              height: 6,
+            ),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: c.titleColor()),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget buildOtherFun2(
-    String title,
-    IconData icon,
-    GestureTapCallback onTap,
-  ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 2,
-      ),
-      child: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            vertical: 10,
-            horizontal: 3,
-          ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                color: ref.watch(themeProvider).primaryColor,
-                size: 24,
-              ),
-              const SizedBox(
-                height: 5,
-              ),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: ref.watch(themeProvider).themeColor.titleColor(),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+  /// 多账号数：单实例模式下多容器同时在线是关掉的，先提示去关
+  void _multiAccount() {
+    if (SpUtil.getBool(spSingleInstance, defValue: false)) {
+      '请先进入 系统设置 关闭单实例模式'.toast();
+      return;
+    }
+    Navigator.of(context).push(
+      CupertinoPageRoute(builder: (context) => const UpdateMaxAccountPage()),
     );
+  }
+
+  void _sortAccount() {
+    if (SpUtil.getBool(spSingleInstance, defValue: false)) {
+      '请先进入 系统设置 关闭单实例模式'.toast();
+      return;
+    }
+    Navigator.of(context).push(
+      CupertinoPageRoute(builder: (context) => const SortAccountPage()),
+    );
+  }
+
+  void _loginLog() {
+    if (SingleAccountPageState.ofUserInfo(context).useSecretLogined) {
+      "使用client_id方式登录无法获取登录日志".toast();
+      return;
+    }
+    Navigator.of(context).pushNamed(Routes.routeLoginLog);
   }
 
   /// 默认用户头像（原按 VIP 等级区分，现已统一）

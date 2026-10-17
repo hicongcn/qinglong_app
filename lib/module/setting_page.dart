@@ -10,6 +10,7 @@ import 'package:qinglong_app/main.dart';
 import 'package:qinglong_app/module/home/home_page.dart';
 import 'package:qinglong_app/module/home/system_bean.dart';
 import 'package:qinglong_app/module/home/version_history_bean.dart';
+import 'package:qinglong_app/module/others/update_password_page.dart';
 import 'package:qinglong_app/utils/extension.dart';
 import 'package:qinglong_app/utils/sp_utils.dart';
 
@@ -109,7 +110,8 @@ class _SettingPageState extends ConsumerState<SettingPage> {
     final List<Widget> children = <Widget>[];
     for (int i = 0; i < items.length; i++) {
       if (i > 0) {
-        children.add(const Divider(indent: 55, height: 1));
+        // 50 = 卡片内边距 15 + 图标 20 + 间距 15，正好落在文字起始位置
+        children.add(const Divider(indent: 50, height: 1));
       }
       children.add(items[i]);
     }
@@ -140,26 +142,31 @@ class _SettingPageState extends ConsumerState<SettingPage> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-        child: Row(
-          children: [
-            Icon(icon, color: tint ?? primary, size: 20),
-            const SizedBox(width: 15),
-            Text(
-              title,
-              style: TextStyle(
-                color: tint ?? c.titleColor(),
-                fontSize: 16,
+      // 固定行高：开关行和跳转行原来各自按内容撑开（开关 31、文字 20），
+      // 卡片里就会出现高低不齐、右边也不在同一条竖线上。统一成 52 后全部对齐。
+      child: SizedBox(
+        height: 52,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          child: Row(
+            children: [
+              Icon(icon, color: tint ?? primary, size: 20),
+              const SizedBox(width: 15),
+              Text(
+                title,
+                style: TextStyle(
+                  color: tint ?? c.titleColor(),
+                  fontSize: 16,
+                ),
               ),
-            ),
-            if (titleSuffix != null) ...[
-              const SizedBox(width: 5),
-              titleSuffix,
+              if (titleSuffix != null) ...[
+                const SizedBox(width: 5),
+                titleSuffix,
+              ],
+              const Spacer(),
+              trailing,
             ],
-            const Spacer(),
-            trailing,
-          ],
+          ),
         ),
       ),
     );
@@ -177,13 +184,12 @@ class _SettingPageState extends ConsumerState<SettingPage> {
       icon: icon,
       title: title,
       titleSuffix: titleSuffix,
-      trailing: Transform.scale(
-        scale: 0.9,
-        child: CupertinoSwitch(
-          activeColor: ref.watch(themeProvider).primaryColor,
-          value: value,
-          onChanged: onChanged,
-        ),
+      // 不要再用 Transform.scale(0.9) 缩开关：缩放后右边缘会内缩 2~3px，
+      // 与下面「外观」那行的箭头不在一条竖线上，看起来就是"宽度不一样"。
+      trailing: CupertinoSwitch(
+        activeColor: ref.watch(themeProvider).primaryColor,
+        value: value,
+        onChanged: onChanged,
       ),
     );
   }
@@ -332,6 +338,14 @@ class _SettingPageState extends ConsumerState<SettingPage> {
             ],
             const SizedBox(height: 12),
             _card(c, [
+              _navRow(
+                icon: CupertinoIcons.lock_shield,
+                title: "修改密码",
+                onTap: _updatePassword,
+              ),
+            ]),
+            const SizedBox(height: 12),
+            _card(c, [
               _actionRow(
                 icon: CupertinoIcons.square_arrow_right,
                 title: "退出登录",
@@ -380,6 +394,16 @@ class _SettingPageState extends ConsumerState<SettingPage> {
         size: 16,
         color: Colors.grey,
       ),
+    );
+  }
+
+  void _updatePassword() {
+    if (SingleAccountPageState.ofUserInfo(context).useSecretLogined) {
+      "使用client_id方式登录无法修改密码".toast();
+      return;
+    }
+    Navigator.of(context).push(
+      CupertinoPageRoute(builder: (context) => const UpdatePasswordPage()),
     );
   }
 
