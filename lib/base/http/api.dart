@@ -14,6 +14,7 @@ import 'package:qinglong_app/module/others/task_log/task_log_bean.dart';
 import 'package:qinglong_app/module/others/update/check_update_bean.dart';
 import 'package:qinglong_app/module/task/intime_log/intime_log_chunk.dart';
 import 'package:qinglong_app/module/task/task_view_bean.dart';
+import 'package:qinglong_app/module/login/two_factor_init_bean.dart';
 import 'package:qinglong_app/module/others/dashboard/dashboard_overview_bean.dart';
 
 import '../../module/task/TaskBean2.dart';
@@ -563,6 +564,56 @@ class Api {
       {
         "file": name,
         "path": path ?? "",
+      },
+    );
+  }
+
+  // ── 两步验证 ──
+
+  /// 生成两步验证密钥。已启用时会返回"请先关闭两步验证"。
+  Future<HttpResponse<TwoFactorInitBean>> twoFactorInit() async {
+    return await getIt<Http>(instanceName: index.toString())
+        .get<TwoFactorInitBean>(
+      getIt<Url>(instanceName: index.toString()).twoFactorInit,
+      null,
+    );
+  }
+
+  /// 用 6 位验证码激活两步验证。
+  ///
+  /// 服务端返回 `{code:200, data: <boolean>}`，`data` 表示验证码是否正确。
+  /// 这里用 String 接（`jsonEncode(true)` → `"true"`），避免给 JsonConversion
+  /// 注册 bool 类型。
+  ///
+  /// ⚠️ 激活成功后服务端会清空所有登录 token（`token: ''`、`tokens: {}`），
+  /// 所以调用方要提示用户"需要用验证码重新登录"。
+  Future<HttpResponse<String>> twoFactorActive(String code) async {
+    return await getIt<Http>(instanceName: index.toString()).put<String>(
+      getIt<Url>(instanceName: index.toString()).twoFactorActive,
+      {"code": code},
+    );
+  }
+
+  /// 关闭两步验证（服务端不需要二次确认）。
+  Future<HttpResponse<NullResponse>> twoFactorDeactivate() async {
+    return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
+      getIt<Url>(instanceName: index.toString()).twoFactorDeactivate,
+      <String, dynamic>{},
+    );
+  }
+
+  /// 脚本重命名。只改文件名，不动内容；同名文件由服务端校验。
+  Future<HttpResponse<NullResponse>> renameScript(
+    String filename,
+    String? path,
+    String newFilename,
+  ) async {
+    return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
+      getIt<Url>(instanceName: index.toString()).scriptRename,
+      {
+        "filename": filename,
+        "path": path ?? "",
+        "newFilename": newFilename,
       },
     );
   }

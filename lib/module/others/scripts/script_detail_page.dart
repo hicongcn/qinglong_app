@@ -129,6 +129,57 @@ class _ScriptDetailPageState extends ConsumerState<ScriptDetailPage> with LazyLo
         ),
         addDivider(),
         CupertinoSheer(
+          title: "重命名",
+          onTap: () async {
+            final TextEditingController nameController =
+                TextEditingController(text: widget.title);
+            final String? newName = await showCupertinoDialog<String>(
+              context: context,
+              builder: (ctx) => CupertinoAlertDialog(
+                title: const Text("重命名"),
+                content: Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: CupertinoTextField(
+                    controller: nameController,
+                    placeholder: "新文件名",
+                    autofocus: true,
+                  ),
+                ),
+                actions: [
+                  CupertinoDialogAction(
+                    child: const Text(
+                      "取消",
+                      style: TextStyle(color: Color(0xff999999)),
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                  CupertinoDialogAction(
+                    child: const Text("确定"),
+                    onPressed: () =>
+                        Navigator.of(ctx).pop(nameController.text.trim()),
+                  ),
+                ],
+              ),
+            );
+            nameController.dispose();
+
+            if (newName == null || newName.isEmpty || newName == widget.title) {
+              return;
+            }
+            final HttpResponse<NullResponse> result =
+                await SingleAccountPageState.ofApi(context)
+                    .renameScript(widget.title, widget.path, newName);
+            if (result.success) {
+              "已重命名为 $newName".toast();
+              // 通知上一层刷新列表（文件名变了）
+              if (mounted) Navigator.of(context).pop(true);
+            } else {
+              result.message?.toast();
+            }
+          },
+        ),
+        addDivider(),
+        CupertinoSheer(
           title: "编辑历史",
           onTap: () async {
             // 青龙 2.23+ 才有这三个接口；老服务端会返回 404，页面里会显示原因

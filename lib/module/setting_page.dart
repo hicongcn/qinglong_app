@@ -14,6 +14,7 @@ import 'package:qinglong_app/base/ui/button.dart';
 import 'package:qinglong_app/main.dart';
 import 'package:qinglong_app/module/home/home_page.dart';
 import 'package:qinglong_app/module/others/dashboard/dashboard_page.dart';
+import 'package:qinglong_app/module/others/two_factor/two_factor_page.dart';
 import 'package:qinglong_app/module/home/system_bean.dart';
 import 'package:qinglong_app/module/home/version_history_bean.dart';
 import 'package:qinglong_app/utils/extension.dart';
@@ -560,6 +561,51 @@ class _SettingPageState extends ConsumerState<SettingPage> {
                       indent: 55,
                       height: 1,
                     ),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(
+                          builder: (context) => const TwoFactorPage(),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 15,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.lock_shield,
+                            color: ref.watch(themeProvider).primaryColor,
+                            size: 20,
+                          ),
+                          const SizedBox(
+                            width: 15,
+                          ),
+                          Text(
+                            "两步验证",
+                            style: TextStyle(
+                              color: ref.watch(themeProvider).themeColor.titleColor(),
+                              fontSize: 16,
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            CupertinoIcons.right_chevron,
+                            size: 16,
+                            color: ref.watch(themeProvider).themeColor.hintColor(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Divider(
+                    indent: 55,
+                    height: 1,
                   ),
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,

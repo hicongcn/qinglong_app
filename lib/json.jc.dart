@@ -12,6 +12,7 @@ import 'package:qinglong_app/module/others/login_log/login_log_bean.dart';
 import 'package:qinglong_app/module/others/scripts/script_bean.dart';
 import 'package:qinglong_app/module/others/scripts/script_history_bean.dart';
 import 'package:qinglong_app/module/others/task_log/task_log_bean.dart';
+import 'package:qinglong_app/module/login/two_factor_init_bean.dart';
 import 'package:qinglong_app/module/others/dashboard/dashboard_overview_bean.dart';
 import 'package:qinglong_app/module/task/task_view_bean.dart';
 import 'package:qinglong_app/module/others/update/check_update_bean.dart';
@@ -68,6 +69,10 @@ class JsonConversion$Json {
 
     if (type == (DashboardOverviewBean).toString()) {
       return DashboardOverviewBean.jsonConversion(json) as M;
+    }
+
+    if (type == (TwoFactorInitBean).toString()) {
+      return TwoFactorInitBean.jsonConversion(json) as M;
     }
 
     if (type == (DependencyBean).toString()) {

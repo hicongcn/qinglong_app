@@ -107,6 +107,19 @@ class Url {
 
   get configsDetail => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/configs/detail" : "/api/configs/detail";
 
+  // ── 两步验证 ──
+  /// 生成密钥（返回 {secret, url}；已启用时会报"请先关闭两步验证"）
+  get twoFactorInit => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/user/two-factor/init" : "/api/user/two-factor/init";
+
+  /// 用 6 位验证码激活，返回 boolean（校验是否通过）
+  get twoFactorActive => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/user/two-factor/active" : "/api/user/two-factor/active";
+
+  /// 关闭（无 body）
+  get twoFactorDeactivate => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/user/two-factor/deactivate" : "/api/user/two-factor/deactivate";
+
+  /// 脚本重命名（body: {filename, path, newFilename}）
+  get scriptRename => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/scripts/rename" : "/api/scripts/rename";
+
   // ── 脚本编辑历史（青龙 2.23+，需 scripts 权限）──
   // ⚠️ 参数名是 `filename`，而读内容的 /scripts/detail 用的是 `file`（服务端命名不一致）
   get scriptHistory =>
