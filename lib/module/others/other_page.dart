@@ -245,11 +245,16 @@ class OtherPageState extends ConsumerState<OtherPage>
                 const SizedBox(
                   height: 12,
                 ),
-                // 两个板块，按"功能归属"划分，不按重要性：
-                //   青龙 = 面板（服务端）的能力；App 设置 = 这台手机上的能力。
+                // 两个板块，按功能归属划分，条目顺序与命名对齐青龙面板的左侧菜单：
+                //   仪表盘 → 订阅管理 → 脚本管理 → 依赖管理 → 日志 → 系统设置
                 // ⛔ 服务端功能不许放进 App 板块，反之亦然（用户明确要求过）。
-                // 青龙 12 个 = 三行；App 6 个 = 一行 + 两个空位。
-                _gridCard("青龙", <Widget>[
+                // ⛔ 板块名是「青龙设置」（用户指定）。
+                _gridCard("青龙设置", <Widget>[
+                  _cell("运行概览",
+                      icon: CupertinoIcons.chart_bar_alt_fill,
+                      onTap: () => Navigator.of(context).push(
+                          CupertinoPageRoute(
+                              builder: (context) => const DashboardPage()))),
                   _cell("订阅管理",
                       asset: "assets/images/icon_subsctibe.png",
                       onTap: () => Navigator.of(context)
@@ -258,15 +263,10 @@ class OtherPageState extends ConsumerState<OtherPage>
                       asset: "assets/images/icon_s.png",
                       onTap: () =>
                           Navigator.of(context).pushNamed(Routes.routeScript)),
-                  _cell("运行概览",
-                      icon: CupertinoIcons.chart_bar_alt_fill,
-                      onTap: () => Navigator.of(context).push(
-                          CupertinoPageRoute(
-                              builder: (context) => const DashboardPage()))),
-                  _cell("两步验证",
-                      icon: CupertinoIcons.lock_shield,
-                      onTap: () => Navigator.of(context).push(CupertinoPageRoute(
-                          builder: (context) => const TwoFactorPage()))),
+                  _cell("依赖管理",
+                      icon: CupertinoIcons.cube_box,
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(Routes.routeDependency)),
                   _cell("任务日志",
                       asset: "assets/images/icon_task_log.png",
                       onTap: () =>
@@ -282,31 +282,21 @@ class OtherPageState extends ConsumerState<OtherPage>
                       icon: CupertinoIcons.bell,
                       onTap: () => Navigator.of(context).push(CupertinoPageRoute(
                           builder: (context) => const NotifyLogPage()))),
-                  _cell("扫描依赖",
-                      icon: CupertinoIcons.doc_text_search,
-                      onTap: () => Navigator.of(context).push(
-                          CupertinoPageRoute(
-                              builder: (context) => const ScanPage()))),
-                  // 依赖管理页一直都在（DependencyPage + 路由），只是从来没给入口
-                  _cell("依赖管理",
-                      icon: CupertinoIcons.cube_box,
-                      onTap: () =>
-                          Navigator.of(context).pushNamed(Routes.routeDependency)),
-                  // 通知设置 = 面板的推送渠道（gotify / Server酱 / bark / telegram）
                   _cell("通知设置",
                       icon: CupertinoIcons.envelope,
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
                               builder: (context) => const PushSettingPage()))),
-                  // 应用密钥 = 面板的应用授权（client_id / secret）
                   _cell("应用密钥",
                       icon: Icons.vpn_key,
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
                               builder: (context) => const AppKeyPage()))),
-                  _cell("日志设置",
-                      icon: CupertinoIcons.gobackward_30,
-                      onTap: () => _delLog(context)),
+                  _cell("两步验证",
+                      icon: CupertinoIcons.lock_shield,
+                      onTap: () => Navigator.of(context).push(CupertinoPageRoute(
+                          builder: (context) => const TwoFactorPage()))),
+                  // 日志清理频率并入了「面板设置」页，这里不再单列
                   _cell("面板设置",
                       icon: CupertinoIcons.slider_horizontal_3,
                       onTap: () => Navigator.of(context).push(
@@ -318,6 +308,13 @@ class OtherPageState extends ConsumerState<OtherPage>
                   height: 12,
                 ),
                 _gridCard("App 设置", <Widget>[
+                  // 扫描依赖跑的是服务端的 dependencies 接口，但它是「检查本机脚本缺哪些包」的
+                  // 客户端动作，按用户要求放在 App 侧。
+                  _cell("扫描依赖",
+                      icon: CupertinoIcons.doc_text_search,
+                      onTap: () => Navigator.of(context).push(
+                          CupertinoPageRoute(
+                              builder: (context) => const ScanPage()))),
                   _cell("多账号数",
                       icon: CupertinoIcons.infinite, onTap: _multiAccount),
                   _cell("账号排序",

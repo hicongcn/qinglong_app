@@ -82,6 +82,16 @@ class _PanelSettingPageState extends ConsumerState<PanelSettingPage> {
                 onTap: _loading ? null : () => _editConcurrency(c),
               ),
             ]),
+            _sectionTitle("日志", c),
+            _card(c, [
+              _row(
+                c,
+                icon: CupertinoIcons.gobackward_30,
+                title: "日志清理频率",
+                value: _loading ? "读取中" : (_logKeepDays == null ? "-" : "$_logKeepDays 天"),
+                onTap: _loading ? null : () => _editLogKeepDays(c),
+              ),
+            ]),
             _sectionTitle("面板", c),
             _card(c, [
               _row(
@@ -210,6 +220,51 @@ class _PanelSettingPageState extends ConsumerState<PanelSettingPage> {
               }
               final response =
                   await SingleAccountPageState.ofApi(context).updateCronConcurrency(value);
+              if (!mounted) return;
+              response.message.toast();
+              if (response.success) _load();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editLogKeepDays(ThemeColors c) async {
+    final TextEditingController controller =
+        TextEditingController(text: _logKeepDays?.toString() ?? "");
+    await showCupertinoDialog(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text("日志清理频率"),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            decoration: const InputDecoration(hintText: "每 N 天清理 N 天前的日志"),
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text("取消", style: TextStyle(color: Color(0xff999999))),
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          CupertinoDialogAction(
+            child: Text(
+              "保存",
+              style: TextStyle(color: ref.watch(themeProvider).primaryColor),
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final int? value = int.tryParse(controller.text.trim());
+              if (value == null || value < 1) {
+                "请输入大于 0 的整数".toast();
+                return;
+              }
+              final response =
+                  await SingleAccountPageState.ofApi(context).logDelTime(value);
               if (!mounted) return;
               response.message.toast();
               if (response.success) _load();

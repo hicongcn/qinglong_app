@@ -188,6 +188,8 @@ class EnvDetailCell extends ConsumerWidget {
           fontSize: 16,
         ),
       ),
+      // 量宽度也必须带上用户设置的缩放，否则大字号下"换行判定"和实际渲染对不上
+      textScaleFactor: MediaQuery.of(context).textScaleFactor,
       textDirection: TextDirection.ltr,
     );
     textPainter.layout();

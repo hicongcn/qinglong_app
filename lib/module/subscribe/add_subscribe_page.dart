@@ -1047,6 +1047,8 @@ class TitleWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ref) {
     return RichText(
+                      // RichText 不像 Text 那样自动乘 textScaleFactor，不显式传就跟不上「字体大小」设置
+                      textScaleFactor: MediaQuery.of(context).textScaleFactor,
       text: TextSpan(
         text: !required ? "" : "* ",
         style: const TextStyle(
