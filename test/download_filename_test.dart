@@ -39,4 +39,29 @@ void main() {
           reason: '时间戳不是当前时间：$n');
     });
   });
+
+  group('日志保存必须带扩展名', () {
+    test('任务名（无后缀）补 .log', () {
+      // 运行日志页的 title 是任务名，「天天夺宝」直接存出来是无后缀文件
+      expect(FileUtil.withLogExtension('天天夺宝'), '天天夺宝.log');
+      expect(FileUtil.withLogExtension('  elm/天天夺宝  '), 'elm/天天夺宝.log');
+    });
+
+    test('已有扩展名的原样保留', () {
+      expect(FileUtil.withLogExtension('a.log'), 'a.log');
+      expect(FileUtil.withLogExtension('task.txt'), 'task.txt');
+    });
+
+    test('空名字也有兜底', () {
+      expect(FileUtil.withLogExtension(''), 'log.log');
+      expect(FileUtil.withLogExtension('   '), 'log.log');
+    });
+
+    test('补完再插时间戳，后缀仍在末尾', () {
+      final String n = FileUtil.timestampedName(
+          FileUtil.withLogExtension('天天夺宝'));
+      expect(RegExp(r'^天天夺宝_\d{8}_\d{6}\.log$').hasMatch(n), isTrue,
+          reason: n);
+    });
+  });
 }

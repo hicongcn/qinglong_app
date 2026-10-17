@@ -264,6 +264,18 @@ class FileUtil {
   /// 覆盖上一次的文件。加时间戳既能保持"看得出是哪个脚本"，又不会互相覆盖。
   ///
   /// `demo.js` → `demo_20261017_093000.js`；`demo` → `demo_20261017_093000`
+  /// 保证文件名带扩展名。
+  ///
+  /// 运行日志页的 `title` 是**任务名**（如「天天夺宝」），本身没有后缀，
+  /// 直接拿去保存会得到一个无后缀文件，系统不知道该用什么打开。
+  /// 已经有扩展名的（`xxx.log`）原样返回。
+  static String withLogExtension(String fileName, {String ext = ".log"}) {
+    final String name = fileName.trim();
+    if (name.isEmpty) return "log$ext";
+    if (path.extension(name).isNotEmpty) return name;
+    return "$name$ext";
+  }
+
   static String timestampedName(String fileName) {
     final int dot = fileName.lastIndexOf('.');
     // dot > 0：跳过 `dot == 0`（形如 ".gitignore" 的隐藏文件）和没有点的情况

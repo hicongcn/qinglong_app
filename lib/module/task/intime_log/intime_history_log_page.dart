@@ -81,7 +81,8 @@ class _InTimeHistoryLogPageState extends State<InTimeHistoryLogPage> with LazyLo
                     title: "下载",
                     onTap: () async {
                       try {
-                        final String name = FileUtil.timestampedName(widget.title);
+                        final String name = FileUtil.timestampedName(
+                            FileUtil.withLogExtension(widget.title));
                         await FileUtil(0).writeDownloadFile(name, content ?? "");
                         "已写入qinglong_app文件夹下,文件名$name".toast2();
                       } catch (e) {

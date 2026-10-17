@@ -287,7 +287,9 @@ class _InTimeLogPageState extends ConsumerState<InTimeLogPage> with LazyLoadStat
       return;
     }
     try {
-      final String name = FileUtil.timestampedName(widget.title);
+      // title 是任务名，先补 .log 再插时间戳，避免存出无后缀文件
+      final String name = FileUtil.timestampedName(
+          FileUtil.withLogExtension(widget.title));
       await FileUtil(0).writeDownloadFile(name, text);
       "已写入qinglong_app文件夹下,文件名$name".toast2();
     } catch (e) {
