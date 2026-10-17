@@ -21,6 +21,11 @@ class Url {
 
   get tasks => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/crons" : "/api/crons";
 
+  /// 环境变量置顶 / 取消置顶
+  get envPin => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/envs/pin" : "/api/envs/pin";
+
+  get envUnpin => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/envs/unpin" : "/api/envs/unpin";
+
   /// 运行概览（今日运行次数/成功率等）
   get dashboardOverview => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/dashboard/overview" : "/api/dashboard/overview";
 

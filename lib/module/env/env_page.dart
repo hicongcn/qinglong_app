@@ -516,6 +516,16 @@ class EnvItemCell extends StatelessWidget {
             icon: CupertinoIcons.pencil_outline,
           ),
           SlidableAction(
+            backgroundColor: const Color(0xff4C8DEA),
+            onPressed: (_) {
+              pinEnv(context);
+            },
+            foregroundColor: Colors.white,
+            icon: bean.isPinned == 1
+                ? Icons.push_pin
+                : Icons.push_pin_outlined,
+          ),
+          SlidableAction(
             backgroundColor: const Color(0xffA356D6),
             onPressed: (_) {
               enableEnv(context);
@@ -715,6 +725,11 @@ class EnvItemCell extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void pinEnv(BuildContext context) {
+    ref.read(SingleAccountPageState.ofEnvProvider(context)(getProviderName(context)))
+        .pinEnv(context, [bean.sId!], bean.isPinned != 1);
   }
 
   void enableEnv(BuildContext context) {

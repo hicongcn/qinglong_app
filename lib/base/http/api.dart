@@ -418,6 +418,17 @@ class Api {
     );
   }
 
+  /// 置顶 / 取消置顶环境变量。服务端把 body 当 number[]，Joi 会自动把
+  /// 数字字符串转成数字，所以这里仍传 String 列表（与 enableEnv 一致）。
+  Future<HttpResponse<NullResponse>> pinEnv(List<String> ids, bool pin) async {
+    return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
+      pin
+          ? getIt<Url>(instanceName: index.toString()).envPin
+          : getIt<Url>(instanceName: index.toString()).envUnpin,
+      ids,
+    );
+  }
+
   Future<HttpResponse<NullResponse>> disableEnv(List<String> ids) async {
     return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
       getIt<Url>(instanceName: index.toString()).disableEnvs,

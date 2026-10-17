@@ -58,6 +58,20 @@ void main() {
     expect(detail.contains('队列中'), isTrue, reason: '任务详情页未显示排队中');
   });
 
+  test('环境变量支持置顶（服务端 isPinned / envs/pin）', () {
+    final String bean = File('lib/module/env/env_bean.dart').readAsStringSync();
+    expect(bean.contains('isPinned'), isTrue, reason: 'EnvBean 缺 isPinned 字段');
+    expect(bean.contains("json['isPinned']"), isTrue, reason: '未解析 isPinned');
+
+    final String page = File('lib/module/env/env_page.dart').readAsStringSync();
+    expect(page.contains('pinEnv(context)'), isTrue,
+        reason: '环境变量侧滑菜单没有置顶入口');
+    expect(page.contains('push_pin'), isTrue, reason: '置顶图标缺失');
+
+    final String api = File('lib/base/http/api.dart').readAsStringSync();
+    expect(api.contains('envPin'), isTrue, reason: '接口未接 envs/pin');
+  });
+
   test('任务详情页有「运行 / 停止」入口（startCron/stopCron 不能是死代码）', () {
     final String page =
         File('lib/module/task/task_detail/task_detail_page.dart').readAsStringSync();

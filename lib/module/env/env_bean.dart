@@ -6,6 +6,11 @@ class EnvBean {
   String? value;
   String? remarks;
   int? status;
+
+  /// 是否置顶（服务端 `isPinned`，1=置顶）。列表由服务端按
+  /// `COALESCE(isPinned,0) DESC, position DESC, createdAt ASC` 排好序。
+  int? isPinned;
+
   String? sId;
   int? id;
   int? created;
@@ -29,6 +34,7 @@ class EnvBean {
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
     status = json['status'];
+    isPinned = json['isPinned'];
     id = json['id'];
     // 新版服务端主键是 int 的 id（不再有 _id）；sId 是它的字符串形式
     sId = id?.toString();

@@ -79,6 +79,19 @@ class EnvViewModel extends BaseViewModel {
     loadData(context, false);
   }
 
+  /// 置顶 / 取消置顶（[pinned] 为 true 表示要置顶）
+  Future<void> pinEnv(
+      BuildContext context, List<String> sId, bool pinned) async {
+    final HttpResponse<NullResponse> response =
+        await SingleAccountPageState.ofApi(context).pinEnv(sId, pinned);
+    if (response.success) {
+      (pinned ? "已置顶" : "已取消置顶").toast();
+      loadData(context, false);
+    } else {
+      failToast(response.message, notify: true);
+    }
+  }
+
   Future<void> enableEnv(
       BuildContext context, List<String> sId, int status) async {
     if (status == 1) {
