@@ -14,6 +14,7 @@ import 'package:qinglong_app/module/others/task_log/task_log_bean.dart';
 import 'package:qinglong_app/module/others/update/check_update_bean.dart';
 import 'package:qinglong_app/module/task/intime_log/intime_log_chunk.dart';
 import 'package:qinglong_app/module/task/task_view_bean.dart';
+import 'package:qinglong_app/module/others/dashboard/dashboard_overview_bean.dart';
 
 import '../../module/task/TaskBean2.dart';
 import '../ui/tree/models/script_data.dart';
@@ -110,6 +111,17 @@ class Api {
   }
 
   /// 任务列表：新版返回 `{data:{data:[...],total}}`，由 TaskBean2 解开双层包装
+  /// 运行概览（`GET /api/dashboard/overview`）。
+  ///
+  /// 返回今日的运行次数/成功/失败/成功率/平均耗时，以及任务总数与启用/禁用数。
+  Future<HttpResponse<DashboardOverviewBean>> dashboardOverview() async {
+    return await getIt<Http>(instanceName: index.toString())
+        .get<DashboardOverviewBean>(
+      getIt<Url>(instanceName: index.toString()).dashboardOverview,
+      null,
+    );
+  }
+
   /// 任务视图列表（`GET /api/crons/views`）。
   ///
   /// 系统只预置「全部任务」一个（`type=1`，没有筛选条件）；

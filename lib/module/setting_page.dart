@@ -13,6 +13,7 @@ import 'package:qinglong_app/base/theme.dart';
 import 'package:qinglong_app/base/ui/button.dart';
 import 'package:qinglong_app/main.dart';
 import 'package:qinglong_app/module/home/home_page.dart';
+import 'package:qinglong_app/module/others/dashboard/dashboard_page.dart';
 import 'package:qinglong_app/module/home/system_bean.dart';
 import 'package:qinglong_app/module/home/version_history_bean.dart';
 import 'package:qinglong_app/utils/extension.dart';
@@ -559,6 +560,51 @@ class _SettingPageState extends ConsumerState<SettingPage> {
                       indent: 55,
                       height: 1,
                     ),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(
+                          builder: (context) => const DashboardPage(),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 15,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.chart_bar_alt_fill,
+                            color: ref.watch(themeProvider).primaryColor,
+                            size: 20,
+                          ),
+                          const SizedBox(
+                            width: 15,
+                          ),
+                          Text(
+                            "运行概览",
+                            style: TextStyle(
+                              color: ref.watch(themeProvider).themeColor.titleColor(),
+                              fontSize: 16,
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            CupertinoIcons.right_chevron,
+                            size: 16,
+                            color: ref.watch(themeProvider).themeColor.hintColor(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Divider(
+                    indent: 55,
+                    height: 1,
                   ),
                   Visibility(
                     visible: !(systemBean.fromAutoGet ?? false),

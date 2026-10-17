@@ -200,6 +200,23 @@ void main() {
           _send(req, {"code": 200, "data": {"logRemoveFrequency": 15}});
           return;
 
+        // 运行概览
+        case "/api/dashboard/overview":
+          _send(req, {
+            "code": 200,
+            "data": {
+              "total": 45,
+              "enabled": 40,
+              "disabled": 5,
+              "todayRuns": 12,
+              "todaySuccess": 10,
+              "todayFail": 2,
+              "successRate": "83.3",
+              "avgTime": 34,
+            },
+          });
+          return;
+
         // 任务视图（保存的筛选/排序方案）
         case "/api/crons/views":
           _send(req, {
@@ -626,6 +643,22 @@ void main() {
     final sent = jsonDecode(cronBodies.single) as Map<String, dynamic>;
     expect(sent["extra_schedules"], isEmpty,
         reason: "空数组表示清空全部额外规则；不传则服务端会沿用原值");
+  });
+
+  test("运行概览：成功率是字符串、聚合计数能转成 int", () async {
+    final api = Api(0);
+    final res = await api.dashboardOverview();
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(res.bean?.total, 45);
+    expect(res.bean?.enabled, 40);
+    expect(res.bean?.disabled, 5);
+    expect(res.bean?.todayRuns, 12);
+    expect(res.bean?.todaySuccess, 10);
+    expect(res.bean?.todayFail, 2);
+    expect(res.bean?.successRate, "83.3",
+        reason: "服务端用 toFixed(1) 转成了字符串，不能按 num 解析");
+    expect(res.bean?.avgTime, 34);
   });
 
   test("任务视图：解析 id/name，并区分系统视图与有筛选的视图", () async {
