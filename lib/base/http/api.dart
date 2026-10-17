@@ -13,9 +13,9 @@ import 'package:qinglong_app/module/others/scripts/script_history_bean.dart';
 import 'package:qinglong_app/module/others/task_log/task_log_bean.dart';
 import 'package:qinglong_app/module/others/update/check_update_bean.dart';
 import 'package:qinglong_app/module/task/intime_log/intime_log_chunk.dart';
-import 'package:qinglong_app/module/task/task_view_bean.dart';
 import 'package:qinglong_app/module/login/two_factor_init_bean.dart';
 import 'package:qinglong_app/module/others/dashboard/dashboard_overview_bean.dart';
+import 'package:qinglong_app/module/others/dashboard/dashboard_stats_bean.dart';
 
 import '../../module/task/TaskBean2.dart';
 import '../../module/others/logs/notify_log_bean.dart';
@@ -158,14 +158,38 @@ class Api {
     );
   }
 
-  /// 任务视图列表（`GET /api/crons/views`）。
-  ///
-  /// 系统只预置「全部任务」一个（`type=1`，没有筛选条件）；
-  /// 其余是用户在面板里自建的筛选/排序方案。
-  Future<HttpResponse<List<TaskViewBean>>> taskViews() async {
+  /// 近 N 日趋势（`GET /api/dashboard/trend?days=`）
+  Future<HttpResponse<List<DashboardTrendBean>>> dashboardTrend({int days = 7}) async {
     return await getIt<Http>(instanceName: index.toString())
-        .get<List<TaskViewBean>>(
-      getIt<Url>(instanceName: index.toString()).taskViews,
+        .get<List<DashboardTrendBean>>(
+      getIt<Url>(instanceName: index.toString()).dashboardTrend,
+      {"days": days.toString()},
+    );
+  }
+
+  /// 今日耗时 Top（`GET /api/dashboard/top-time`）
+  Future<HttpResponse<List<DashboardTopBean>>> dashboardTopTime() async {
+    return await getIt<Http>(instanceName: index.toString())
+        .get<List<DashboardTopBean>>(
+      getIt<Url>(instanceName: index.toString()).dashboardTopTime,
+      null,
+    );
+  }
+
+  /// 今日执行次数 Top（`GET /api/dashboard/top-count`）
+  Future<HttpResponse<List<DashboardTopBean>>> dashboardTopCount() async {
+    return await getIt<Http>(instanceName: index.toString())
+        .get<List<DashboardTopBean>>(
+      getIt<Url>(instanceName: index.toString()).dashboardTopCount,
+      null,
+    );
+  }
+
+  /// 面板主机状态（`GET /api/dashboard/system`）
+  Future<HttpResponse<DashboardSystemBean>> dashboardSystem() async {
+    return await getIt<Http>(instanceName: index.toString())
+        .get<DashboardSystemBean>(
+      getIt<Url>(instanceName: index.toString()).dashboardSystem,
       null,
     );
   }

@@ -243,7 +243,6 @@ class TaskPageState extends ConsumerState<TaskPage>
             model: SingleAccountPageState.ofTaskProvider(context)(getProviderName(context)),
             onReady: (viewModel) {
               viewModel.loadData(context);
-              viewModel.loadViews(context);
             },
           ),
         ),
@@ -393,69 +392,6 @@ class TaskPageState extends ConsumerState<TaskPage>
                 ),
               ),
             ),
-            CupertinoButton(
-              color: Colors.transparent,
-              padding: EdgeInsets.zero,
-              onPressed: () async {
-                final model = ref.read(
-                  SingleAccountPageState.ofTaskProvider(context)(
-                          getProviderName(context))
-                      .notifier,
-                );
-                await model.loadViews(context);
-                if (!mounted) return;
-                showCupertinoModalPopup<void>(
-                  context: context,
-                  builder: (ctx) => CupertinoActionSheet(
-                    title: const Text("任务视图"),
-                    message: Text(
-                      model.views.where((v) => v.hasRules).isEmpty
-                          ? "视图是面板里保存的筛选方案。当前只有「全部任务」，"
-                              "想按业务分类可到面板任务页新建视图。"
-                          : "选择要显示的任务范围",
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    actions: [
-                      CupertinoActionSheetAction(
-                        onPressed: () {
-                          Navigator.of(ctx).pop();
-                          model.switchView(context, null);
-                        },
-                        child: Text(
-                          "全部任务${model.currentView == null ? "（当前）" : ""}",
-                        ),
-                      ),
-                      ...model.views
-                          .where((v) => v.hasRules)
-                          .map((v) => CupertinoActionSheetAction(
-                                onPressed: () {
-                                  Navigator.of(ctx).pop();
-                                  model.switchView(context, v);
-                                },
-                                child: Text(
-                                  "${v.name ?? "未命名视图"}"
-                                  "${model.currentView?.id == v.id ? "（当前）" : ""}",
-                                ),
-                              )),
-                    ],
-                    cancelButton: CupertinoActionSheetAction(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      child: const Text("取消"),
-                    ),
-                  ),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.only(left: 12),
-                child: Center(
-                  child: Icon(
-                    CupertinoIcons.line_horizontal_3_decrease,
-                    size: 22,
-                    color: Theme.of(context).appBarTheme.iconTheme?.color,
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
         body: widget.loading
@@ -532,7 +468,6 @@ class TaskPageState extends ConsumerState<TaskPage>
                 model: SingleAccountPageState.ofTaskProvider(context)(getProviderName(context)),
                 onReady: (viewModel) {
                   viewModel.loadData(context);
-              viewModel.loadViews(context);
                 },
               ),
       ),

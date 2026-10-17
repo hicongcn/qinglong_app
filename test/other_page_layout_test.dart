@@ -40,7 +40,7 @@ void main() {
     expect(
       cellsOf(src, "青龙设置"),
       <String>[
-        "运行概览",
+        "仪表盘",
         "订阅管理",
         "脚本管理",
         "依赖管理",

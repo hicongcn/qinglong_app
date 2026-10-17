@@ -221,6 +221,44 @@ void main() {
             _sendRaw(req, 200, systemLogBody);
           }
           return;
+        case "/api/dashboard/trend":
+          _send(req, {
+            "code": 200,
+            "data": [
+              {"date": "2026-10-16", "total": 10, "success": 9, "fail": 1},
+              {"date": "2026-10-17", "total": 4, "success": 4, "fail": 0}
+            ],
+          });
+          return;
+        case "/api/dashboard/top-time":
+          _send(req, {
+            "code": 200,
+            "data": [
+              {"name": "任务A", "avgTime": 12300, "maxTime": 40000}
+            ],
+          });
+          return;
+        case "/api/dashboard/top-count":
+          _send(req, {
+            "code": 200,
+            "data": [
+              {"name": "任务A", "runCount": 7}
+            ],
+          });
+          return;
+        case "/api/dashboard/system":
+          _send(req, {
+            "code": 200,
+            "data": {
+              "platform": "linux",
+              "uptime": 90061,
+              "cpus": 4,
+              "memUsagePercent": "61.5",
+              "heapUsed": 40,
+              "heapTotal": 64
+            },
+          });
+          return;
         case "/api/system/notify-log":
           _send(req, {
             "code": 200,
@@ -467,6 +505,29 @@ void main() {
       requests.single,
       startsWith("PUT /api/system/config/cron-concurrency?"),
     );
+  });
+
+  test("仪表盘趋势/耗时/次数/系统状态：四个新 Bean 都能解析（含 json.jc 列表注册）", () async {
+    final api = Api(0);
+
+    final trend = await api.dashboardTrend();
+    expect(trend.success, isTrue, reason: trend.message ?? "");
+    expect(trend.bean?.length, 2, reason: "列表注册没生效的话这里会是 null");
+    expect(trend.bean!.last.total, 4);
+    expect(trend.bean!.last.shortDate, "10-17");
+
+    final topTime = await api.dashboardTopTime();
+    expect(topTime.bean?.first.name, "任务A");
+    expect(topTime.bean!.first.timeText(topTime.bean!.first.avgTime), "12.3s");
+
+    final topCount = await api.dashboardTopCount();
+    expect(topCount.bean?.first.runCount, 7);
+
+    final system = await api.dashboardSystem();
+    expect(system.bean?.cpus, 4);
+    expect(system.bean?.memUsagePercent, "61.5");
+    expect(system.bean?.memPercentValue, closeTo(0.615, 0.001));
+    expect(system.bean?.uptimeText, "1 天 1 小时");
   });
 
   test("系统日志：GET /api/system/log 是纯文本，不走 JSON 信封", () async {
@@ -756,23 +817,6 @@ void main() {
     expect(res.bean?.avgTime, 34);
   });
 
-  test("任务视图：解析 id/name，并区分系统视图与有筛选的视图", () async {
-    final api = Api(0);
-    final res = await api.taskViews();
-
-    expect(res.success, isTrue, reason: res.message ?? "");
-    expect(res.bean?.length, 2);
-
-    final all = res.bean!.firstWhere((v) => v.name == "全部任务");
-    expect(all.isSystem, isTrue, reason: "type=1 是系统预置");
-    expect(all.hasRules, isFalse, reason: "「全部任务」没有筛选条件");
-
-    final mine = res.bean!.firstWhere((v) => v.name == "淘宝");
-    expect(mine.isSystem, isFalse);
-    expect(mine.hasRules, isTrue);
-    expect(mine.filters?.length, 1);
-    expect(mine.filterRelation, "and");
-  });
 
   test("任务列表：带视图 queryString 时原样透传（服务端自己解释筛选）", () async {
     final api = Api(0);

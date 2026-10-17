@@ -225,22 +225,47 @@ class _TaskDetailPageState extends ConsumerState<TaskDetailPage> with LazyLoadSt
                 ),
                 widget.hideAppbar
                     ? const SizedBox.shrink()
-                    : SizedBox(
-                        width: MediaQuery.of(context).size.width - 80,
-                        child: CupertinoButton(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 5,
-                            ),
-                            color: Colors.red,
-                            child: const Text(
-                              "删 除",
-                              style: TextStyle(
-                                fontSize: 16,
+                    : Column(
+                        children: [
+                          // 复制任务：对应面板的「复制」。不带 id 进编辑页 = 新建，
+                          // 名称加「_副本」后缀，其它字段（命令 / 定时 / 额外调度 / 多实例）原样带过去。
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width - 80,
+                            child: CupertinoButton(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 5,
                               ),
+                              color: Colors.transparent,
+                              child: Text(
+                                "复 制",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: ref.watch(themeProvider).primaryColor,
+                                ),
+                              ),
+                              onPressed: () {
+                                copyTask(context);
+                              },
                             ),
-                            onPressed: () {
-                              delTask(context, ref);
-                            }),
+                          ),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width - 80,
+                            child: CupertinoButton(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 5,
+                                ),
+                                color: Colors.red,
+                                child: const Text(
+                                  "删 除",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  delTask(context, ref);
+                                }),
+                          ),
+                        ],
                       ),
                 const SizedBox(
                   height: 15,
@@ -366,6 +391,31 @@ class _TaskDetailPageState extends ConsumerState<TaskDetailPage> with LazyLoadSt
         );
     isPin = !isPin;
     setState(() {});
+  }
+
+  /// 复制任务：和面板的「复制」一致 —— 打开新建页并把原任务的内容预填进去。
+  ///
+  /// 关键点是**不带 id**（`sId` 留空），`AddTaskPage` 据此判定为「新增任务」，
+  /// 保存时会走 `POST /api/crons` 而不是改到原任务上。
+  void copyTask(BuildContext context) {
+    final TaskBean src = widget.taskBean;
+    final TaskBean copy = TaskBean(
+      name: "${(src.name ?? "").isEmpty ? "任务" : src.name}_副本",
+      command: src.command,
+      schedule: src.schedule,
+    );
+    // 这两个字段不在构造函数里，用级联补上
+    copy.extraSchedules = src.extraSchedules;
+    copy.allowMultipleInstances = src.allowMultipleInstances;
+
+    Navigator.of(context).push(
+      CupertinoPageRoute(
+        builder: (context) => AddTaskPage(
+          taskBean: copy,
+          hideUploadFile: true,
+        ),
+      ),
+    );
   }
 
   void delTask(BuildContext context1, WidgetRef ref) {

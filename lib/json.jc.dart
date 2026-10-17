@@ -15,7 +15,7 @@ import 'package:qinglong_app/module/others/logs/notify_log_bean.dart';
 import 'package:qinglong_app/module/others/task_log/task_log_bean.dart';
 import 'package:qinglong_app/module/login/two_factor_init_bean.dart';
 import 'package:qinglong_app/module/others/dashboard/dashboard_overview_bean.dart';
-import 'package:qinglong_app/module/task/task_view_bean.dart';
+import 'package:qinglong_app/module/others/dashboard/dashboard_stats_bean.dart';
 import 'package:qinglong_app/module/others/update/check_update_bean.dart';
 import 'package:qinglong_app/module/task/TaskBean2.dart';
 import 'package:qinglong_app/module/task/task_bean.dart';
@@ -64,10 +64,16 @@ class JsonConversion$Json {
       return ScriptHistoryDetailBean.jsonConversion(json) as M;
     }
 
-    if (type == (TaskViewBean).toString()) {
-      return TaskViewBean.jsonConversion(json) as M;
-    }
 
+    if (type == (DashboardTrendBean).toString()) {
+      return DashboardTrendBean.jsonConversion(json) as M;
+    }
+    if (type == (DashboardTopBean).toString()) {
+      return DashboardTopBean.jsonConversion(json) as M;
+    }
+    if (type == (DashboardSystemBean).toString()) {
+      return DashboardSystemBean.jsonConversion(json) as M;
+    }
     if (type == (DashboardOverviewBean).toString()) {
       return DashboardOverviewBean.jsonConversion(json) as M;
     }
@@ -157,13 +163,16 @@ class JsonConversion$Json {
     if (<TaskLogBean>[] is M) {
       return data.map<TaskLogBean>((e) => TaskLogBean.jsonConversion(e)).toList() as M;
     }
+    if (<DashboardTrendBean>[] is M) {
+      return data.map<DashboardTrendBean>((e) => DashboardTrendBean.jsonConversion(e)).toList() as M;
+    }
+    if (<DashboardTopBean>[] is M) {
+      return data.map<DashboardTopBean>((e) => DashboardTopBean.jsonConversion(e)).toList() as M;
+    }
     if (<NotifyLogBean>[] is M) {
       return data.map<NotifyLogBean>((e) => NotifyLogBean.jsonConversion(e)).toList() as M;
     }
 
-    if (<TaskViewBean>[] is M) {
-      return data.map<TaskViewBean>((e) => TaskViewBean.jsonConversion(e)).toList() as M;
-    }
 
     if (<CheckUpdateBean>[] is M) {
       return data.map<CheckUpdateBean>((e) => CheckUpdateBean.jsonConversion(e)).toList() as M;

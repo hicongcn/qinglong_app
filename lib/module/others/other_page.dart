@@ -250,7 +250,7 @@ class OtherPageState extends ConsumerState<OtherPage>
                 // ⛔ 服务端功能不许放进 App 板块，反之亦然（用户明确要求过）。
                 // ⛔ 板块名是「青龙设置」（用户指定）。
                 _gridCard("青龙设置", <Widget>[
-                  _cell("运行概览",
+                  _cell("仪表盘",
                       icon: CupertinoIcons.chart_bar_alt_fill,
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
