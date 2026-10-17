@@ -67,12 +67,52 @@ class Api {
     );
   }
 
-  /// 通知日志（面板「系统设置 → 通知日志」）
+  /// 通知日志（面板「系统设置 → 通知日志」）。
+  ///
+  /// 不用 `get<List<NotifyLogBean>>`：那条路要求 `data` 恰好是数组、且每个元素的
+  /// 字段类型完全对得上，否则 `decodeResponse` 会把整次请求判成「json解析失败」。
+  /// 这里直接取信封自己解析，顺便兼容 `{list: [...]}` / `{rows: [...]}` 这类包一层的情况，
+  /// 单条记录脏数据也只跳过它自己。
   Future<HttpResponse<List<NotifyLogBean>>> notifyLog() async {
-    return await getIt<Http>(instanceName: index.toString())
-        .get<List<NotifyLogBean>>(
-      getIt<Url>(instanceName: index.toString()).notifyLog,
-      {},
+    final Map<String, dynamic>? envelope = await getIt<Http>(
+            instanceName: index.toString())
+        .getEnvelope(getIt<Url>(instanceName: index.toString()).notifyLog, null);
+    if (envelope == null) {
+      return HttpResponse<List<NotifyLogBean>>(
+        success: false,
+        code: -1000,
+        message: "读取通知日志失败",
+      );
+    }
+    if (envelope["code"] != 200) {
+      return HttpResponse<List<NotifyLogBean>>(
+        success: false,
+        code: envelope["code"] ?? 0,
+        message: envelope["message"]?.toString(),
+      );
+    }
+
+    dynamic data = envelope["data"];
+    if (data is Map) {
+      data = data["list"] ?? data["rows"] ?? data["data"];
+    }
+
+    final List<NotifyLogBean> list = <NotifyLogBean>[];
+    if (data is List) {
+      for (final dynamic item in data) {
+        if (item is Map) {
+          try {
+            list.add(NotifyLogBean.fromJson(item.cast<String, dynamic>()));
+          } catch (_) {
+            // 单条坏数据跳过，不连累整页
+          }
+        }
+      }
+    }
+    return HttpResponse<List<NotifyLogBean>>(
+      success: true,
+      code: 200,
+      bean: list,
     );
   }
 

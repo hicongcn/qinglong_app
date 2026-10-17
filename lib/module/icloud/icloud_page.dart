@@ -16,6 +16,7 @@ import 'package:qinglong_app/main.dart';
 import 'package:qinglong_app/module/others/file_directory_page.dart';
 import 'package:qinglong_app/module/others/other_page.dart';
 import 'package:qinglong_app/utils/extension.dart';
+import 'package:qinglong_app/utils/icloud_channel.dart';
 import 'package:qinglong_app/utils/icloud_utils.dart';
 import 'package:qinglong_app/utils/sp_utils.dart';
 
@@ -29,6 +30,48 @@ class IcloudPage extends ConsumerStatefulWidget {
 }
 
 class _IcloudPageState extends ConsumerState<IcloudPage> with LazyLoadState<IcloudPage> {
+  /// null = 还没探测完；true/false = iCloud 容器可用性（仅 iOS 有意义）
+  bool? iCloudReady;
+
+  @override
+  void initState() {
+    super.initState();
+    _probeICloud();
+  }
+
+  Future<void> _probeICloud() async {
+    final bool ready = await ICloudChannel.available();
+    if (!mounted) return;
+    setState(() => iCloudReady = ready);
+  }
+
+  /// 顶部那行存储位置提示
+  Widget _storageHint() {
+    final ThemeColors c = ref.watch(themeProvider).themeColor;
+    String text;
+    Color color = c.descColor();
+    if (Platform.isIOS) {
+      if (iCloudReady == null) {
+        text = "正在检查 iCloud…";
+      } else if (iCloudReady == true) {
+        text = "备份存放在 iCloud Drive 的「青龙客户端」文件夹，卸载重装或换机后可以找回";
+        color = const Color(0xff089556);
+      } else {
+        text = "未检测到 iCloud（未签名/自签的包常见），备份暂存在本机，卸载 App 会一起删除";
+        color = const Color(0xffE5484D);
+      }
+    } else {
+      text = "备份存放在 App 私有目录，卸载 App 会一起删除";
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Text(
+        text,
+        style: TextStyle(color: color, fontSize: 11, height: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,12 +95,19 @@ class _IcloudPageState extends ConsumerState<IcloudPage> with LazyLoadState<Iclo
                 padding: const EdgeInsets.symmetric(
                   horizontal: 15,
                 ),
-                child: Text(
-                  "当你添加,修改,删除的时候,将会自动备份",
-                  style: TextStyle(
-                    color: ref.watch(themeProvider).themeColor.descColor(),
-                    fontSize: 12,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "当你添加,修改,删除的时候,将会自动备份",
+                      style: TextStyle(
+                        color: ref.watch(themeProvider).themeColor.descColor(),
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    _storageHint(),
+                  ],
                 ),
               ),
               const SizedBox(

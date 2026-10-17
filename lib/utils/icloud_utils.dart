@@ -9,6 +9,7 @@ import 'package:qinglong_app/base/userinfo_viewmodel.dart';
 import 'package:qinglong_app/main.dart';
 import 'package:qinglong_app/module/env/env_bean.dart';
 import 'package:qinglong_app/utils/extension.dart';
+import 'package:qinglong_app/utils/icloud_channel.dart';
 import 'package:qinglong_app/utils/sp_utils.dart';
 import 'package:qinglong_app/utils/utils.dart';
 import 'package:path/path.dart' as path;
@@ -320,8 +321,23 @@ class FileUtil {
     return directory.path;
   }
 
+  /// 备份根目录：**优先 iCloud 容器**，拿不到再退回本机沙盒。
+  ///
+  /// 这是「备份」和「本地快照」的唯一区别 —— 只有落在 iCloud 容器的 Documents 里，
+  /// 卸载重装、换机才找得回来（iOS 上该目录会出现在「文件 → iCloud Drive → 青龙客户端」）。
+  /// Android 没有 iCloud，`ICloudChannel` 直接返回 null，行为与以前一致。
   Future<String> get localPath async {
-    return (await sourcePath) + path.separator + getHost();
+    final String base = await backupRoot;
+    return base + path.separator + getHost();
+  }
+
+  /// 备份根目录（不含 host 子目录）
+  Future<String> get backupRoot async {
+    if (SpUtil.getBool(spICloud, defValue: true)) {
+      final String? cloud = await ICloudChannel.containerPath();
+      if (cloud != null && cloud.isNotEmpty) return cloud;
+    }
+    return await sourcePath;
   }
 
   Future<Directory> getSubscribeDirectory() async {

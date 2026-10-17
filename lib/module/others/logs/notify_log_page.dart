@@ -85,10 +85,10 @@ class _NotifyLogPageState extends ConsumerState<NotifyLogPage> {
   Widget _item(NotifyLogBean bean, ThemeColors c) {
     final Color statusColor =
         bean.success ? const Color(0xff089556) : const Color(0xffE5484D);
-    final String time = bean.timestamp == null
-        ? "-"
-        : DateFormat('MM-dd HH:mm:ss')
-            .format(DateTime.fromMillisecondsSinceEpoch(bean.timestamp! * 1000));
+    // bean.time 内部会判断时间戳是秒还是毫秒
+    final DateTime? at = bean.time;
+    final String time =
+        at == null ? "-" : DateFormat('MM-dd HH:mm:ss').format(at);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

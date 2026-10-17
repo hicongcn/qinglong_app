@@ -77,6 +77,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
       GeneratedPluginRegistrant.register(with: flutterViewController)
     }
 
+    // iCloud 备份通道。
+    //
+    // 备份文件要落到 iCloud Drive 的容器里才有意义（卸载 App 也不会丢），
+    // 而 Flutter 侧拿不到 ubiquity container 的 URL，只能走原生。
+    // 自签 / 未签名（TrollStore、AltStore）的包里没有有效的 iCloud entitlement，
+    // 这个调用会返回 nil —— 那是系统限制，不是代码问题，Dart 侧会降级成本地备份。
+    SceneDelegate.setupICloudChannel(flutterViewController)
+
     self.window = window
     // 同步给 AppDelegate：引擎与部分插件会通过 UIApplication.shared.delegate.window
     // 取当前窗口。
@@ -104,4 +112,44 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
   }
 
   func sceneDidDisconnect(_ scene: UIScene) {}
+
+  /// 注册 `qinglong/icloud` 通道。只注册一次。
+  private static var iCloudChannelReady = false
+
+  static func setupICloudChannel(_ controller: FlutterViewController) {
+    guard !iCloudChannelReady else { return }
+    iCloudChannelReady = true
+
+    let channel = FlutterMethodChannel(
+      name: "qinglong/icloud",
+      binaryMessenger: controller.binaryMessenger
+    )
+    channel.setMethodCallHandler { call, result in
+      switch call.method {
+      case "containerPath":
+        // url(forUbiquityContainerIdentifier:) 是同步阻塞调用（首次可能几百毫秒），
+        // 不能放在主线程上，否则会卡住首帧。
+        DispatchQueue.global(qos: .userInitiated).async {
+          var containerPath: String?
+          if let url = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
+            let docs = url.appendingPathComponent("Documents")
+            if !FileManager.default.fileExists(atPath: docs.path) {
+              try? FileManager.default.createDirectory(
+                at: docs, withIntermediateDirectories: true)
+            }
+            containerPath = docs.path
+          }
+          DispatchQueue.main.async { result(containerPath) }
+        }
+      case "isAvailable":
+        DispatchQueue.global(qos: .userInitiated).async {
+          let available = FileManager.default
+            .url(forUbiquityContainerIdentifier: nil) != nil
+          DispatchQueue.main.async { result(available) }
+        }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+  }
 }
