@@ -41,6 +41,15 @@ class Api {
     );
   }
 
+  /// 任务并发数。默认 `max(cpus, 4)`：核多的机器默认值偏高，容易 OOMKilled
+  /// 连带容器重启、running 任务全被标成 stopped，所以客户端给个可调入口。
+  Future<HttpResponse<String>> updateCronConcurrency(int num) async {
+    return await getIt<Http>(instanceName: index.toString()).put<String>(
+      getIt<Url>(instanceName: index.toString()).cronConcurrency,
+      {"cronConcurrency": num},
+    );
+  }
+
   Future<HttpResponse<SystemBean>> system() async {
     return await getIt<Http>(instanceName: index.toString()).get<SystemBean>(
       Url.system,

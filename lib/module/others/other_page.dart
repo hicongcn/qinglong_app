@@ -13,6 +13,7 @@ import 'package:qinglong_app/base/sp_const.dart';
 import 'package:qinglong_app/base/theme.dart';
 import 'package:qinglong_app/base/ui/lazy_load_state.dart';
 import 'package:qinglong_app/module/others/dashboard/dashboard_page.dart';
+import 'package:qinglong_app/module/others/panel_setting/panel_setting_page.dart';
 import 'package:qinglong_app/module/others/two_factor/two_factor_page.dart';
 import 'package:qinglong_app/module/others/change_account_page.dart';
 import 'package:qinglong_app/module/others/sort_account_page.dart';
@@ -244,8 +245,8 @@ class OtherPageState extends ConsumerState<OtherPage>
                 ),
                 // 两个板块，按"功能归属"划分，不按重要性：
                 //   青龙 = 面板（服务端）的能力；App 设置 = 这台手机上的能力。
-                // ⛔ 不要把服务端功能放进 App 板块，反之亦然（用户明确要求过）。
-                // 每行四个，两个板块各 8 个、正好各两行。
+                // ⛔ 服务端功能不许放进 App 板块，反之亦然（用户明确要求过）。
+                // 青龙 12 个 = 三行；App 6 个 = 一行 + 两个空位。
                 _gridCard("青龙", <Widget>[
                   _cell("订阅管理",
                       asset: "assets/images/icon_subsctibe.png",
@@ -276,24 +277,37 @@ class OtherPageState extends ConsumerState<OtherPage>
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
                               builder: (context) => const ScanPage()))),
-                  _cell("日志设置",
-                      icon: CupertinoIcons.gobackward_30,
-                      onTap: () => _delLog(context)),
-                ]),
-                const SizedBox(
-                  height: 12,
-                ),
-                _gridCard("App 设置", <Widget>[
-                  _cell("应用密钥",
-                      icon: Icons.vpn_key,
-                      onTap: () => Navigator.of(context).push(
-                          CupertinoPageRoute(
-                              builder: (context) => const AppKeyPage()))),
+                  // 依赖管理页一直都在（DependencyPage + 路由），只是从来没给入口
+                  _cell("依赖管理",
+                      icon: CupertinoIcons.cube_box,
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(Routes.routeDependency)),
+                  // 通知设置 = 面板的推送渠道（gotify / Server酱 / bark / telegram）
                   _cell("通知设置",
                       icon: CupertinoIcons.envelope,
                       onTap: () => Navigator.of(context).push(
                           CupertinoPageRoute(
                               builder: (context) => const PushSettingPage()))),
+                  // 应用密钥 = 面板的应用授权（client_id / secret）
+                  _cell("应用密钥",
+                      icon: Icons.vpn_key,
+                      onTap: () => Navigator.of(context).push(
+                          CupertinoPageRoute(
+                              builder: (context) => const AppKeyPage()))),
+                  _cell("日志设置",
+                      icon: CupertinoIcons.gobackward_30,
+                      onTap: () => _delLog(context)),
+                  _cell("面板设置",
+                      icon: CupertinoIcons.slider_horizontal_3,
+                      onTap: () => Navigator.of(context).push(
+                          CupertinoPageRoute(
+                              builder: (context) =>
+                                  const PanelSettingPage()))),
+                ]),
+                const SizedBox(
+                  height: 12,
+                ),
+                _gridCard("App 设置", <Widget>[
                   _cell("多账号数",
                       icon: CupertinoIcons.infinite, onTap: _multiAccount),
                   _cell("账号排序",

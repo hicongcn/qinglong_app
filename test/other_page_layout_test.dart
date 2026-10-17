@@ -47,7 +47,11 @@ void main() {
         "任务日志",
         "登录日志",
         "扫描依赖",
+        "依赖管理",
+        "通知设置",
+        "应用密钥",
         "日志设置",
+        "面板设置",
       ],
     );
   });
@@ -57,8 +61,6 @@ void main() {
     expect(
       cellsOf(src, "App 设置"),
       <String>[
-        "应用密钥",
-        "通知设置",
         "多账号数",
         "账号排序",
         "字体大小",
@@ -69,10 +71,10 @@ void main() {
     );
   });
 
-  test('两个板块各 8 个，正好两行四列', () {
+  test('青龙 12 个（三行）、App 6 个（一行四列 + 两空位）', () {
     final String src = source.readAsStringSync();
-    expect(cellsOf(src, "青龙").length, 8);
-    expect(cellsOf(src, "App 设置").length, 8);
+    expect(cellsOf(src, "青龙").length, 12);
+    expect(cellsOf(src, "App 设置").length, 6);
     // 每行必须是 4 列，不能按条目数自适应
     expect(RegExp(r'for \(int i = 0; i < 4; i\+\+\)').hasMatch(src), isTrue);
     // 旧的 flex 排版不允许回来

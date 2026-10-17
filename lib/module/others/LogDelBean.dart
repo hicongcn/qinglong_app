@@ -54,15 +54,21 @@ class Info {
   /// 系统配置里的日志删除频率
   int? logRemoveFrequency;
 
-  Info({this.logRemoveFrequency});
+  /// 任务并发数（2.23 起从 `MaxConcurrentNum` 挪到这里，默认 max(cpus, 4)）。
+  /// 核多的机器默认值偏高 → 容易 OOMKilled → 容器重启 → 任务批量中断。
+  int? cronConcurrency;
+
+  Info({this.logRemoveFrequency, this.cronConcurrency});
 
   Info.fromJson(Map<String, dynamic> json) {
     logRemoveFrequency = json['logRemoveFrequency'];
+    cronConcurrency = json['cronConcurrency'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['logRemoveFrequency'] = this.logRemoveFrequency;
+    data['cronConcurrency'] = this.cronConcurrency;
     return data;
   }
 }

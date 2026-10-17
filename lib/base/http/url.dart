@@ -137,6 +137,10 @@ class Url {
   get logRemoveFrequency =>
       getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/config/log-remove-frequency" : "/api/system/config/log-remove-frequency";
 
+  /// 任务并发数（2.23 取代了老的 MaxConcurrentNum）
+  get cronConcurrency =>
+      getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/config/cron-concurrency" : "/api/system/config/cron-concurrency";
+
   get appkeys => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/apps" : "/api/apps";
 
   resetAppKey(dynamic id) {

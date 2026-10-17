@@ -192,12 +192,19 @@ void main() {
             "data": {
               "id": 1,
               "type": "systemConfig",
-              "info": {"logRemoveFrequency": 7, "timezone": "Asia/Shanghai"},
+              "info": {
+                "logRemoveFrequency": 7,
+                "cronConcurrency": 8,
+                "timezone": "Asia/Shanghai"
+              },
             },
           });
           return;
         case "/api/system/config/log-remove-frequency":
           _send(req, {"code": 200, "data": {"logRemoveFrequency": 15}});
+          return;
+        case "/api/system/config/cron-concurrency":
+          _send(req, {"code": 200, "data": {"cronConcurrency": 3}});
           return;
 
         // 运行概览
@@ -406,6 +413,26 @@ void main() {
     expect(
       requests.single,
       startsWith("PUT /api/system/config/log-remove-frequency?"),
+    );
+  });
+
+  test("任务并发数读取：GET /api/system/config，解析 info.cronConcurrency", () async {
+    final api = Api(0);
+    final res = await api.logDel();
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(res.bean?.info?.cronConcurrency, 8);
+  });
+
+  test("任务并发数写入：PUT /api/system/config/cron-concurrency，字段名 cronConcurrency", () async {
+    final api = Api(0);
+    final res = await api.updateCronConcurrency(3);
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(requests.length, 1, reason: requests.toString());
+    expect(
+      requests.single,
+      startsWith("PUT /api/system/config/cron-concurrency?"),
     );
   });
 
