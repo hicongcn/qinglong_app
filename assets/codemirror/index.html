@@ -29,6 +29,23 @@
         display: block;
       }
       .CodeMirror {float: left; width: 100%; height: 100%; }
+
+      /* 行号栏必须禁止选中。
+         CodeMirror 官方只把 gutter 的选区背景设为透明（codemirror.css 里的
+         .CodeMirror-gutter-wrapper ::selection { background-color: transparent }），
+         「看起来没选中」但文字仍在选区里 —— 移动端长按全选/拖选跨过行号栏时，
+         行号数字会被一起复制进剪贴板，粘出来每行都带行号。
+         这里直接让 gutter 不可被选中，从根上解决。 */
+      .CodeMirror-gutters,
+      .CodeMirror-gutter,
+      .CodeMirror-linenumber,
+      .CodeMirror-gutter-elt,
+      .CodeMirror-gutter-wrapper {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
     </style>
 </head>
 <body>

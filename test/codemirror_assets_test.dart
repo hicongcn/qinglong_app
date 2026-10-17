@@ -120,6 +120,20 @@ void main() {
         reason: 'codemirror.js 体积过小，可能不是完整库');
   });
 
+  test('行号栏必须禁止选中（否则复制代码会带上行号）', () {
+    final String html = File('assets/codemirror/index.html').readAsStringSync();
+    expect(
+      html.contains('user-select: none'),
+      isTrue,
+      reason: 'index.html 缺少 gutter 的 user-select: none —— '
+          'CodeMirror 只把 gutter 选区背景设为透明，文字仍在选区里，'
+          '移动端全选/拖选会把行号一起复制出来',
+    );
+    // 至少要覆盖行号栏与折叠加槽
+    expect(html.contains('.CodeMirror-linenumber'), isTrue,
+        reason: '未针对 .CodeMirror-linenumber 关闭选中');
+  });
+
   test('pubspec.yaml 已声明编辑器资源目录', () {
     final String pubspec = File('pubspec.yaml').readAsStringSync();
     expect(

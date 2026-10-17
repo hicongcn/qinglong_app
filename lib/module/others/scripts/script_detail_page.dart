@@ -1,4 +1,3 @@
-import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -152,7 +151,19 @@ class _ScriptDetailPageState extends ConsumerState<ScriptDetailPage> with LazyLo
         CupertinoSheer(
           title: "分享",
           onTap: () {
-            Share.share(content ?? "");
+            final String text = content ?? "";
+            if (text.isEmpty) {
+              "脚本内容还没加载完".toast();
+              return;
+            }
+            // iPad 上必须给 sharePositionOrigin，否则系统分享面板无法弹出
+            final RenderBox? box = context.findRenderObject() as RenderBox?;
+            Share.share(
+              text,
+              subject: widget.title,
+              sharePositionOrigin:
+                  box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+            );
           },
         ),
         addDivider(),
@@ -160,8 +171,10 @@ class _ScriptDetailPageState extends ConsumerState<ScriptDetailPage> with LazyLo
           title: "下载",
           onTap: () async {
             try {
-              String name = "${Random().nextInt(40000)}_${widget.title}";
-              var file = await FileUtil(0).writeDownloadFile(name, content ?? "");
+              // 文件名就是脚本名（原先前面会拼一个随机数，用户拿到手对不上号）。
+              // writeDownloadFile 内部对同名文件是先删后写，不存在覆盖确认问题。
+              String name = widget.title;
+              await FileUtil(0).writeDownloadFile(name, content ?? "");
               "已写入qinglong_app文件夹下,文件名$name".toast2();
             } catch (e) {
               e.toString().toast();

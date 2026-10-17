@@ -1,4 +1,3 @@
-import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -117,7 +116,8 @@ class _ConfigDetailPageState extends ConsumerState<ConfigDetailPage> with LazyLo
                   title: "下载",
                   onTap: () async {
                     try {
-                      String name = "${Random().nextInt(40000)}_${widget.bean.title}";
+                      // 文件名与配置文件同名（原先会拼随机数前缀）
+                      final String name = widget.bean.title ?? "config";
                       var file = await FileUtil(0).writeDownloadFile(name, sourceContent ?? "");
                       "已写入qinglong_app文件夹下,文件名$name".toast2();
                     } catch (e) {
