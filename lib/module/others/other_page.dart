@@ -444,29 +444,59 @@ class OtherPageState extends ConsumerState<OtherPage>
                       const SizedBox(
                         height: 10,
                       ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: buildOtherFun2(
-                                "多账号数", CupertinoIcons.infinite, () {
-                              if (SpUtil.getBool(spSingleInstance,
-                                  defValue: false)) {
-                                '请先进入 系统设置 关闭单实例模式'.toast();
-                                return;
-                              }
-
-                              Navigator.of(context).push(
-                                CupertinoPageRoute(
-                                  builder: (context) =>
-                                      const UpdateMaxAccountPage(),
-                                ),
-                              );
-                            }),
+                      // 原来这里是一个 4 列网格格子 + 三个 Spacer ——
+                      // 只有一项却占满宽度，右边全空。改成整行列表项。
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          if (SpUtil.getBool(spSingleInstance,
+                              defValue: false)) {
+                            '请先进入 系统设置 关闭单实例模式'.toast();
+                            return;
+                          }
+                          Navigator.of(context).push(
+                            CupertinoPageRoute(
+                              builder: (context) =>
+                                  const UpdateMaxAccountPage(),
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 6,
                           ),
-                          const Spacer(),
-                          const Spacer(),
-                          const Spacer(),
-                        ],
+                          child: Row(
+                            children: [
+                              Icon(
+                                CupertinoIcons.infinite,
+                                color: ref.watch(themeProvider).primaryColor,
+                                size: 20,
+                              ),
+                              const SizedBox(
+                                width: 15,
+                              ),
+                              Text(
+                                "多账号数",
+                                style: TextStyle(
+                                  color: ref
+                                      .watch(themeProvider)
+                                      .themeColor
+                                      .titleColor(),
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(
+                                CupertinoIcons.right_chevron,
+                                size: 16,
+                                color: ref
+                                    .watch(themeProvider)
+                                    .themeColor
+                                    .descColor(),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
