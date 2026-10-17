@@ -1,20 +1,13 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qinglong_app/base/commit_button.dart';
 import 'package:qinglong_app/base/multi_account_userinfo_viewmodel.dart';
 import 'package:qinglong_app/base/routes.dart';
 import 'package:qinglong_app/base/single_account_page.dart';
 import 'package:qinglong_app/base/sp_const.dart';
 import 'package:qinglong_app/base/theme.dart';
-import 'package:qinglong_app/base/ui/button.dart';
 import 'package:qinglong_app/main.dart';
 import 'package:qinglong_app/module/home/home_page.dart';
-import 'package:qinglong_app/module/others/dashboard/dashboard_page.dart';
-import 'package:qinglong_app/module/others/two_factor/two_factor_page.dart';
 import 'package:qinglong_app/module/home/system_bean.dart';
 import 'package:qinglong_app/module/home/version_history_bean.dart';
 import 'package:qinglong_app/utils/extension.dart';
@@ -22,6 +15,12 @@ import 'package:qinglong_app/utils/sp_utils.dart';
 
 import '../base/ql_app_bar.dart';
 
+/// App 设置页。
+///
+/// 版式约定（整页只此一套，别再局部改）：
+///  - 分组标题 + 一张卡片，卡片内条目由 [_card] 自动插分割线；
+///  - 所有条目都走 [_rowShell]，避免每项各自手写 Padding>Row 造成缩进漂移；
+///  - 危险操作（退出登录）单独一张卡片、红字，不用整屏宽的大按钮。
 class SettingPage extends ConsumerStatefulWidget {
   const SettingPage({Key? key}) : super(key: key);
 
@@ -30,6 +29,9 @@ class SettingPage extends ConsumerStatefulWidget {
 }
 
 class _SettingPageState extends ConsumerState<SettingPage> {
+  /// 红色，两套主题下都够醒目
+  static const Color _danger = Color(0xffE5484D);
+
   /// 当前外观的文字描述
   String _appearanceLabel() {
     if (SpUtil.getBool(spThemeFollowSystem, defValue: false)) {
@@ -41,8 +43,8 @@ class _SettingPageState extends ConsumerState<SettingPage> {
     return "浅色";
   }
 
-  /// 选外观。原来这里是「白色主题 / 黑色主题 / 跟随系统」三个开关，
-  /// 三个并列的互斥开关既占地方又容易看错，合并成一个选择器。
+  /// 选外观。原来是「白色主题 / 黑色主题 / 跟随系统」三个并列开关，
+  /// 既占地方又容易看错，合并成一个选择器。
   Future<void> _pickAppearance() async {
     final bool follow = SpUtil.getBool(spThemeFollowSystem, defValue: false);
     final int style = SpUtil.getInt(spThemeStyle, defValue: modeWhite);
@@ -92,6 +94,148 @@ class _SettingPageState extends ConsumerState<SettingPage> {
     if (mounted) setState(() {});
   }
 
+  // ---------------------------------------------------------------- 版式零件
+
+  Widget _sectionTitle(String text, ThemeColors c) => Padding(
+        padding: const EdgeInsets.only(left: 30, top: 15, bottom: 10),
+        child: Text(
+          text,
+          style: TextStyle(color: c.descColor(), fontSize: 12),
+        ),
+      );
+
+  /// 卡片外壳。条目之间自动补分割线，调用方只管给条目。
+  Widget _card(ThemeColors c, List<Widget> items) {
+    final List<Widget> children = <Widget>[];
+    for (int i = 0; i < items.length; i++) {
+      if (i > 0) {
+        children.add(const Divider(indent: 55, height: 1));
+      }
+      children.add(items[i]);
+    }
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 15),
+      decoration: BoxDecoration(
+        color: c.settingBordorColor(),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+
+  /// 单行条目：图标 + 标题 + （可选小问号）+ 右侧内容，整行可点。
+  Widget _rowShell({
+    required IconData icon,
+    required String title,
+    required Widget trailing,
+    Widget? titleSuffix,
+    Color? tint,
+    VoidCallback? onTap,
+  }) {
+    final ThemeColors c = ref.watch(themeProvider).themeColor;
+    final Color primary = ref.watch(themeProvider).primaryColor;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+        child: Row(
+          children: [
+            Icon(icon, color: tint ?? primary, size: 20),
+            const SizedBox(width: 15),
+            Text(
+              title,
+              style: TextStyle(
+                color: tint ?? c.titleColor(),
+                fontSize: 16,
+              ),
+            ),
+            if (titleSuffix != null) ...[
+              const SizedBox(width: 5),
+              titleSuffix,
+            ],
+            const Spacer(),
+            trailing,
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 开关条目
+  Widget _switchRow({
+    required IconData icon,
+    required String title,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    Widget? titleSuffix,
+  }) {
+    return _rowShell(
+      icon: icon,
+      title: title,
+      titleSuffix: titleSuffix,
+      trailing: Transform.scale(
+        scale: 0.9,
+        child: CupertinoSwitch(
+          activeColor: ref.watch(themeProvider).primaryColor,
+          value: value,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  /// 跳转条目：右侧是「当前值 + 箭头」
+  Widget _navRow({
+    required IconData icon,
+    required String title,
+    String? value,
+    VoidCallback? onTap,
+  }) {
+    final ThemeColors c = ref.watch(themeProvider).themeColor;
+    return _rowShell(
+      icon: icon,
+      title: title,
+      onTap: onTap,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (value != null && value.isNotEmpty)
+            Text(
+              value,
+              style: TextStyle(color: c.descColor(), fontSize: 14),
+            ),
+          const SizedBox(width: 5),
+          Icon(
+            CupertinoIcons.right_chevron,
+            size: 16,
+            color: c.descColor(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 动作条目：居中或左对齐的纯文字操作（危险操作用红色）
+  Widget _actionRow({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return _rowShell(
+      icon: icon,
+      title: title,
+      tint: _danger,
+      onTap: onTap,
+      trailing: const SizedBox.shrink(),
+    );
+  }
+
+  // ---------------------------------------------------------------- 页面
+
   @override
   Widget build(BuildContext context) {
     SystemBean? systemBean;
@@ -104,594 +248,217 @@ class _SettingPageState extends ConsumerState<SettingPage> {
       systemBean = SystemBean(version: "2.10.13", fromAutoGet: false);
     }
 
+    final ThemeColors c = ref.watch(themeProvider).themeColor;
+    final bool manualVersion = !(systemBean.fromAutoGet ?? false);
+
     return Scaffold(
-      backgroundColor: ref.watch(themeProvider).themeColor.bg2Color(),
+      backgroundColor: c.bg2Color(),
       appBar: QlAppBar(
         title: "设置",
       ),
       body: SingleChildScrollView(
         primary: true,
-        // 底部留出余量，最后一项不至于贴着屏幕边缘
+        // 底部留出余量，最后一行不至于贴着屏幕边缘
         padding: const EdgeInsets.only(bottom: 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 原「VIP功能」区块：VIP 体系已移除，对所有人开放
-            Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(
-                    height: 15,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: 30,
-                    ),
-                    child: Text(
-                      "App 设置",
-                      style: TextStyle(
-                        color: ref.watch(themeProvider).themeColor.descColor(),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 15,
-                    ),
-                    decoration: BoxDecoration(
-                      color: ref
-                          .watch(themeProvider)
-                          .themeColor
-                          .settingBordorColor(),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 3,
-                            horizontal: 15,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                CupertinoIcons.smiley,
-                                color: ref.watch(themeProvider).primaryColor,
-                                size: 20,
-                              ),
-                              const SizedBox(
-                                width: 15,
-                              ),
-                              Text(
-                                "使用Face ID解锁",
-                                style: TextStyle(
-                                  color: ref
-                                      .watch(themeProvider)
-                                      .themeColor
-                                      .titleColor(),
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const Spacer(),
-                              Transform.scale(
-                                scale: 0.9,
-                                child: CupertinoSwitch(
-                                  activeColor:
-                                      ref.watch(themeProvider).primaryColor,
-                                  value: SpUtil.getBool(spOpenAuth,
-                                      defValue: false),
-                                  onChanged: (open) async {
-                                    await SpUtil.putBool(spOpenAuth, open);
-                                    setState(() {});
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Divider(
-                          indent: 55,
-                          height: 1,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 3,
-                            horizontal: 15,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                CupertinoIcons.wand_stars_inverse,
-                                color: ref.watch(themeProvider).primaryColor,
-                                size: 20,
-                              ),
-                              const SizedBox(
-                                width: 15,
-                              ),
-                              Text(
-                                "单实例模式",
-                                style: TextStyle(
-                                  color: ref
-                                      .watch(themeProvider)
-                                      .themeColor
-                                      .titleColor(),
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(
-                                width: 5,
-                              ),
-                              GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {
-                                    showCupertinoDialog(
-                                      useRootNavigator: false,
-                                      context: context,
-                                      builder: (context1) =>
-                                          CupertinoAlertDialog(
-                                        content: const Text(
-                                            "开启后可关闭多容器同时在线功能，减少APP对系统内存的消耗，通过长按首页 我的 切换账号"),
-                                        title: const Text("温馨提示"),
-                                        actions: [
-                                          CupertinoDialogAction(
-                                            child: Text(
-                                              "确定",
-                                              style: TextStyle(
-                                                color: ref
-                                                    .watch(themeProvider)
-                                                    .primaryColor,
-                                              ),
-                                            ),
-                                            onPressed: () {
-                                              Navigator.of(context1).pop();
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                  child: const Icon(
-                                    CupertinoIcons.question_circle,
-                                    size: 16,
-                                    color: Colors.grey,
-                                  )),
-                              const Spacer(),
-                              Transform.scale(
-                                scale: 0.9,
-                                child: CupertinoSwitch(
-                                  activeColor:
-                                      ref.watch(themeProvider).primaryColor,
-                                  value: SpUtil.getBool(spSingleInstance,
-                                      defValue: false),
-                                  onChanged: (open) async {
-                                    SpUtil.putBool(spSingleInstance, open);
-                                    setState(() {});
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Divider(
-                          indent: 55,
-                          height: 1,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 3,
-                            horizontal: 15,
-                          ),
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _pickAppearance,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  CupertinoIcons.circle_lefthalf_fill,
-                                  color: ref.watch(themeProvider).primaryColor,
-                                  size: 20,
-                                ),
-                                const SizedBox(
-                                  width: 15,
-                                ),
-                                Text(
-                                  "外观",
-                                  style: TextStyle(
-                                    color: ref
-                                        .watch(themeProvider)
-                                        .themeColor
-                                        .titleColor(),
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  _appearanceLabel(),
-                                  style: TextStyle(
-                                    color: ref
-                                        .watch(themeProvider)
-                                        .themeColor
-                                        .descColor(),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(
-                                  width: 5,
-                                ),
-                                Icon(
-                                  CupertinoIcons.right_chevron,
-                                  size: 16,
-                                  color: ref
-                                      .watch(themeProvider)
-                                      .themeColor
-                                      .descColor(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(
-              height: 12,
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(
-                horizontal: 15,
+            _sectionTitle("App 设置", c),
+            _card(c, [
+              _navRow(
+                icon: CupertinoIcons.circle_lefthalf_fill,
+                title: "外观",
+                value: _appearanceLabel(),
+                onTap: _pickAppearance,
               ),
-              decoration: BoxDecoration(
-                color: ref.watch(themeProvider).themeColor.settingBordorColor(),
-                borderRadius: BorderRadius.circular(10),
+              _switchRow(
+                icon: CupertinoIcons.doc_text,
+                title: "任务自动弹出日志",
+                value: SpUtil.getBool(spAutoShowLog, defValue: true),
+                onChanged: (open) async {
+                  await SpUtil.putBool(spAutoShowLog, open);
+                  setState(() {});
+                },
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 3,
-                      horizontal: 15,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          CupertinoIcons.doc_text,
-                          color: ref.watch(themeProvider).primaryColor,
-                          size: 20,
-                        ),
-                        const SizedBox(
-                          width: 15,
-                        ),
-                        Text(
-                          "任务自动弹出日志",
-                          style: TextStyle(
-                            color: ref
-                                .watch(themeProvider)
-                                .themeColor
-                                .titleColor(),
-                            fontSize: 16,
-                          ),
-                        ),
-                        const Spacer(),
-                        Transform.scale(
-                          scale: 0.9,
-                          child: CupertinoSwitch(
-                            activeColor: ref.watch(themeProvider).primaryColor,
-                            value:
-                                SpUtil.getBool(spAutoShowLog, defValue: true),
-                            onChanged: (open) async {
-                              await SpUtil.putBool(spAutoShowLog, open);
-                              setState(() {});
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(
-                    indent: 55,
-                    height: 1,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 3,
-                      horizontal: 15,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.abc_sharp,
-                          color: ref.watch(themeProvider).primaryColor,
-                          size: 20,
-                        ),
-                        const SizedBox(
-                          width: 15,
-                        ),
-                        Text(
-                          "代码显示行号",
-                          style: TextStyle(
-                            color: ref
-                                .watch(themeProvider)
-                                .themeColor
-                                .titleColor(),
-                            fontSize: 16,
-                          ),
-                        ),
-                        const Spacer(),
-                        Transform.scale(
-                          scale: 0.9,
-                          child: CupertinoSwitch(
-                            activeColor: ref.watch(themeProvider).primaryColor,
-                            value: SpUtil.getBool(spShowLine, defValue: false),
-                            onChanged: (open) async {
-                              await SpUtil.putBool(spShowLine, open);
-                              setState(() {});
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(
-                    indent: 55,
-                    height: 1,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 3,
-                      horizontal: 15,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          CupertinoIcons.arrow_down_doc,
-                          color: ref.watch(themeProvider).primaryColor,
-                          size: 20,
-                        ),
-                        const SizedBox(
-                          width: 15,
-                        ),
-                        Text(
-                          "日志内容自动滚动",
-                          style: TextStyle(
-                            color: ref
-                                .watch(themeProvider)
-                                .themeColor
-                                .titleColor(),
-                            fontSize: 16,
-                          ),
-                        ),
-                        const Spacer(),
-                        Transform.scale(
-                          scale: 0.9,
-                          child: CupertinoSwitch(
-                            activeColor: ref.watch(themeProvider).primaryColor,
-                            value: SpUtil.getBool(spLogAutoJump2Bottom,
-                                defValue: false),
-                            onChanged: (open) async {
-                              await SpUtil.putBool(spLogAutoJump2Bottom, open);
-                              setState(() {});
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-            // 「变更服务器版本号」只在手动指定版本时有意义。自动获取模式下
-            // 整块不渲染 —— 之前只隐藏了里面的条目、标题还在，页面上就多出
-            // 一个只有「服务器」三个字的空卡片。
-            if (!(systemBean.fromAutoGet ?? false))
-              Container(
-              margin: const EdgeInsets.symmetric(
-                horizontal: 15,
+              _switchRow(
+                icon: Icons.abc_sharp,
+                title: "代码显示行号",
+                value: SpUtil.getBool(spShowLine, defValue: false),
+                onChanged: (open) async {
+                  await SpUtil.putBool(spShowLine, open);
+                  setState(() {});
+                },
               ),
-              decoration: BoxDecoration(
-                color: ref.watch(themeProvider).themeColor.settingBordorColor(),
-                borderRadius: BorderRadius.circular(10),
+              _switchRow(
+                icon: CupertinoIcons.arrow_down_doc,
+                title: "日志内容自动滚动",
+                value: SpUtil.getBool(spLogAutoJump2Bottom, defValue: false),
+                onChanged: (open) async {
+                  await SpUtil.putBool(spLogAutoJump2Bottom, open);
+                  setState(() {});
+                },
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Visibility(
-                    visible: !(systemBean.fromAutoGet ?? false),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        _updateVersion(context);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 10,
-                          horizontal: 15,
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              CupertinoIcons.paperplane,
-                              color: ref.watch(themeProvider).primaryColor,
-                              size: 20,
-                            ),
-                            const SizedBox(
-                              width: 15,
-                            ),
-                            Text(
-                              "变更服务器版本号",
-                              style: TextStyle(
-                                color: ref
-                                    .watch(themeProvider)
-                                    .themeColor
-                                    .titleColor(),
-                                fontSize: 16,
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              "(${systemBean.version})",
-                              style: TextStyle(
-                                color: ref
-                                    .watch(themeProvider)
-                                    .themeColor
-                                    .descColor(),
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(
-                              width: 5,
-                            ),
-                            Icon(
-                              CupertinoIcons.right_chevron,
-                              size: 16,
-                              color: ref
-                                  .watch(themeProvider)
-                                  .themeColor
-                                  .descColor(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              _switchRow(
+                icon: CupertinoIcons.smiley,
+                title: "使用Face ID解锁",
+                value: SpUtil.getBool(spOpenAuth, defValue: false),
+                onChanged: (open) async {
+                  await SpUtil.putBool(spOpenAuth, open);
+                  setState(() {});
+                },
               ),
-            ),
-                ],
+              _switchRow(
+                icon: CupertinoIcons.wand_stars_inverse,
+                title: "单实例模式",
+                titleSuffix: _singleInstanceHelp(),
+                value: SpUtil.getBool(spSingleInstance, defValue: false),
+                onChanged: (open) async {
+                  await SpUtil.putBool(spSingleInstance, open);
+                  setState(() {});
+                },
               ),
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            Center(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width - 40,
-                child: ButtonWidget(
-                    title: "退出登录",
-                    onTap: () {
-                      showCupertinoDialog(
-                        useRootNavigator: false,
-                        context: context,
-                        builder: (context1) => CupertinoAlertDialog(
-                          title: const Text("确认退出登录吗?"),
-                          actions: [
-                            CupertinoDialogAction(
-                              child: const Text(
-                                "取消",
-                                style: TextStyle(
-                                  color: Color(0xff999999),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.of(context1).pop();
-                              },
-                            ),
-                            CupertinoDialogAction(
-                              child: Text(
-                                "确定",
-                                style: TextStyle(
-                                  color: ref.watch(themeProvider).primaryColor,
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.of(context1).pop();
-                                SingleAccountPageState.ofUserInfo(context)
-                                    .updateToken(
-                                  SingleAccountPageState.of(context)?.index ??
-                                      0,
-                                  SingleAccountPageState.ofUserInfo(context)
-                                      .host,
-                                  "",
-                                  false,
-                                  SingleAccountPageState.ofUserInfo(context)
-                                      .alias,
-                                );
-                                Navigator.of(context).pushNamedAndRemoveUntil(
-                                  Routes.routeLogin,
-                                  (p) {
-                                    return false;
-                                  },
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+            ]),
+            // 只在手动指定版本时才有意义，整块不渲染（不要留空标题）
+            if (manualVersion) ...[
+              const SizedBox(height: 12),
+              _card(c, [
+                _navRow(
+                  icon: CupertinoIcons.paperplane,
+                  title: "变更服务器版本号",
+                  value: "(${systemBean.version})",
+                  onTap: () => _updateVersion(context),
+                ),
+              ]),
+            ],
+            const SizedBox(height: 12),
+            _card(c, [
+              _actionRow(
+                icon: CupertinoIcons.square_arrow_right,
+                title: "退出登录",
+                onTap: _confirmLogout,
               ),
-            ),
-            const SizedBox(
-              height: 20,
-            ),
-            Center(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width - 40,
-                child: ButtonWidget(
-                    title: "退出登录并清空本地数据",
-                    onTap: () {
-                      showCupertinoDialog(
-                        useRootNavigator: false,
-                        context: context,
-                        builder: (context) => CupertinoAlertDialog(
-                          title: const Text("确认退出登录并清空账号本地数据吗?"),
-                          actions: [
-                            CupertinoDialogAction(
-                              child: const Text(
-                                "取消",
-                                style: TextStyle(
-                                  color: Color(0xff999999),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                            CupertinoDialogAction(
-                              child: Text(
-                                "确定",
-                                style: TextStyle(
-                                  color: ref.watch(themeProvider).primaryColor,
-                                ),
-                              ),
-                              onPressed: () {
-                                clearData(context);
-                                Navigator.of(context).pushNamedAndRemoveUntil(
-                                  Routes.routeLogin,
-                                  (p) {
-                                    return false;
-                                  },
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+              _actionRow(
+                icon: CupertinoIcons.trash,
+                title: "退出登录并清空本地数据",
+                onTap: _confirmLogoutAndClear,
               ),
-            ),
-            const SizedBox(
-              height: 30,
-            ),
+            ]),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 单实例模式的说明气泡
+  Widget _singleInstanceHelp() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        showCupertinoDialog(
+          useRootNavigator: false,
+          context: context,
+          builder: (context1) => CupertinoAlertDialog(
+            content: const Text(
+                "开启后可关闭多容器同时在线功能，减少APP对系统内存的消耗，通过长按首页 我的 切换账号"),
+            title: const Text("温馨提示"),
+            actions: [
+              CupertinoDialogAction(
+                child: Text(
+                  "确定",
+                  style: TextStyle(color: ref.watch(themeProvider).primaryColor),
+                ),
+                onPressed: () {
+                  Navigator.of(context1).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+      child: const Icon(
+        CupertinoIcons.question_circle,
+        size: 16,
+        color: Colors.grey,
+      ),
+    );
+  }
+
+  void _confirmLogout() {
+    showCupertinoDialog(
+      useRootNavigator: false,
+      context: context,
+      builder: (context1) => CupertinoAlertDialog(
+        title: const Text("确认退出登录吗?"),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text(
+              "取消",
+              style: TextStyle(color: Color(0xff999999)),
+            ),
+            onPressed: () {
+              Navigator.of(context1).pop();
+            },
+          ),
+          CupertinoDialogAction(
+            child: Text(
+              "确定",
+              style: TextStyle(color: ref.watch(themeProvider).primaryColor),
+            ),
+            onPressed: () {
+              Navigator.of(context1).pop();
+              SingleAccountPageState.ofUserInfo(context).updateToken(
+                SingleAccountPageState.of(context)?.index ?? 0,
+                SingleAccountPageState.ofUserInfo(context).host,
+                "",
+                false,
+                SingleAccountPageState.ofUserInfo(context).alias,
+              );
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                Routes.routeLogin,
+                (p) {
+                  return false;
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmLogoutAndClear() {
+    showCupertinoDialog(
+      useRootNavigator: false,
+      context: context,
+      builder: (context1) => CupertinoAlertDialog(
+        title: const Text("确认退出登录并清空账号本地数据吗?"),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text(
+              "取消",
+              style: TextStyle(color: Color(0xff999999)),
+            ),
+            onPressed: () {
+              Navigator.of(context1).pop();
+            },
+          ),
+          CupertinoDialogAction(
+            child: Text(
+              "确定",
+              style: TextStyle(color: ref.watch(themeProvider).primaryColor),
+            ),
+            onPressed: () {
+              Navigator.of(context1).pop();
+              clearData(context);
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                Routes.routeLogin,
+                (p) {
+                  return false;
+                },
+              );
+            },
+          ),
+        ],
       ),
     );
   }
