@@ -270,8 +270,11 @@ class FileUtil {
   /// 直接拿去保存会得到一个无后缀文件，系统不知道该用什么打开。
   /// 已经有扩展名的（`xxx.log`）原样返回。
   static String withLogExtension(String fileName, {String ext = ".log"}) {
-    final String name = fileName.trim();
+    String name = fileName.trim();
     if (name.isEmpty) return "log$ext";
+    // 历史日志那边传进来的是**目录名**（如 `elm/天天夺宝`），
+    // 直接当文件名会拼出子目录，这里把路径分隔符等非法字符换成下划线。
+    name = name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
     if (path.extension(name).isNotEmpty) return name;
     return "$name$ext";
   }
@@ -281,7 +284,8 @@ class FileUtil {
     // dot > 0：跳过 `dot == 0`（形如 ".gitignore" 的隐藏文件）和没有点的情况
     final String stem = dot > 0 ? fileName.substring(0, dot) : fileName;
     final String ext = dot > 0 ? fileName.substring(dot) : '';
-    final String stamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    // 用**可读时间**而不是 `20261017_134500` 这种紧凑时间戳
+    final String stamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
     return "${stem}_$stamp$ext";
   }
 

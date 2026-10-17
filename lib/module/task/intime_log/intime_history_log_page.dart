@@ -81,8 +81,14 @@ class _InTimeHistoryLogPageState extends State<InTimeHistoryLogPage> with LazyLo
                     title: "下载",
                     onTap: () async {
                       try {
+                        // `title` 只是日志文件名（2026-10-17-12-05-00-298.log），
+                        // 不含脚本名；`path` 才是它所在的脚本目录（如 elm_天天夺宝）。
+                        // 统一成「脚本名_时间.log」，和实时日志、脚本下载保持一致。
+                        final String base = widget.path.isNotEmpty
+                            ? widget.path
+                            : widget.title;
                         final String name = FileUtil.timestampedName(
-                            FileUtil.withLogExtension(widget.title));
+                            FileUtil.withLogExtension(base));
                         await FileUtil(0).writeDownloadFile(name, content ?? "");
                         "已写入qinglong_app文件夹下,文件名$name".toast2();
                       } catch (e) {
