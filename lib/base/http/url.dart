@@ -141,6 +141,14 @@ class Url {
   get cronConcurrency =>
       getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/config/cron-concurrency" : "/api/system/config/cron-concurrency";
 
+  /// 系统日志（面板「系统设置 → 系统日志」）。返回纯文本，支持 startTime/endTime/limit。
+  get systemLog =>
+      getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/log" : "/api/system/log";
+
+  /// 通知日志（面板「系统设置 → 通知日志」），返回数组。
+  get notifyLog =>
+      getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/system/notify-log" : "/api/system/notify-log";
+
   get appkeys => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/apps" : "/api/apps";
 
   resetAppKey(dynamic id) {

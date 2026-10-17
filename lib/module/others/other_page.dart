@@ -13,6 +13,8 @@ import 'package:qinglong_app/base/sp_const.dart';
 import 'package:qinglong_app/base/theme.dart';
 import 'package:qinglong_app/base/ui/lazy_load_state.dart';
 import 'package:qinglong_app/module/others/dashboard/dashboard_page.dart';
+import 'package:qinglong_app/module/others/logs/notify_log_page.dart';
+import 'package:qinglong_app/module/others/logs/system_log_page.dart';
 import 'package:qinglong_app/module/others/panel_setting/panel_setting_page.dart';
 import 'package:qinglong_app/module/others/two_factor/two_factor_page.dart';
 import 'package:qinglong_app/module/others/change_account_page.dart';
@@ -272,6 +274,14 @@ class OtherPageState extends ConsumerState<OtherPage>
                   _cell("登录日志",
                       asset: "assets/images/icon_login_icon.png",
                       onTap: _loginLog),
+                  _cell("系统日志",
+                      icon: CupertinoIcons.doc_plaintext,
+                      onTap: () => Navigator.of(context).push(CupertinoPageRoute(
+                          builder: (context) => const SystemLogPage()))),
+                  _cell("通知日志",
+                      icon: CupertinoIcons.bell,
+                      onTap: () => Navigator.of(context).push(CupertinoPageRoute(
+                          builder: (context) => const NotifyLogPage()))),
                   _cell("扫描依赖",
                       icon: CupertinoIcons.doc_text_search,
                       onTap: () => Navigator.of(context).push(

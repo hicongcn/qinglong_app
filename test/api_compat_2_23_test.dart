@@ -48,6 +48,12 @@ void main() {
   /// 让 POST/PUT /api/crons 返回 celebrate 的校验失败（400 + validation）
   bool cronSaveInvalid = false;
 
+  /// 系统日志的 mock 正文（纯文本）
+  String systemLogBody = "2026-10-17 12:00:00 [system] boot ok\n2026-10-17 12:00:01 [task] start\n";
+
+  /// DELETE /api/system/log 是否被调用过
+  bool systemLogCleared = false;
+
   setUpAll(() async {
     // flutter_test 默认拦截网络（一律返回 400），这里放行，改用本机 mock 服务
     HttpOverrides.global = null;
@@ -205,6 +211,33 @@ void main() {
           return;
         case "/api/system/config/cron-concurrency":
           _send(req, {"code": 200, "data": {"cronConcurrency": 3}});
+          return;
+        // 系统日志：**纯文本**，不套 {code,data} 信封
+        case "/api/system/log":
+          if (req.method == "DELETE") {
+            systemLogCleared = true;
+            _send(req, {"code": 200, "data": {}});
+          } else {
+            _sendRaw(req, 200, systemLogBody);
+          }
+          return;
+        case "/api/system/notify-log":
+          _send(req, {
+            "code": 200,
+            "data": [
+              {
+                "id": 1,
+                "timestamp": 1760000000,
+                "title": "任务完成",
+                "content": "脚本 xxx 执行成功",
+                "status": 0,
+                "notifyType": "bark",
+                "source": "script",
+                "scriptName": "jd_test.js",
+                "taskId": "12",
+              }
+            ],
+          });
           return;
 
         // 运行概览
@@ -434,6 +467,41 @@ void main() {
       requests.single,
       startsWith("PUT /api/system/config/cron-concurrency?"),
     );
+  });
+
+  test("系统日志：GET /api/system/log 是纯文本，不走 JSON 信封", () async {
+    final api = Api(0);
+    final res = await api.systemLog();
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(res.bean, contains("boot ok"));
+    expect(requests.single, startsWith("GET /api/system/log?"));
+  });
+
+  test("系统日志清空：DELETE /api/system/log", () async {
+    systemLogCleared = false;
+    final api = Api(0);
+    final res = await api.clearSystemLog();
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(systemLogCleared, isTrue);
+    expect(requests.single, startsWith("DELETE /api/system/log"));
+  });
+
+  test("通知日志：GET /api/system/notify-log 解析列表与状态", () async {
+    final api = Api(0);
+    final res = await api.notifyLog();
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(res.bean, isNotNull);
+    expect(res.bean!.length, 1);
+    final item = res.bean!.first;
+    expect(item.title, "任务完成");
+    expect(item.notifyType, "bark");
+    expect(item.success, isTrue, reason: "status 0 = 成功");
+    expect(item.fromScript, isTrue);
+    expect(item.sourceText, contains("jd_test.js"));
+    expect(requests.single, startsWith("GET /api/system/notify-log"));
   });
 
   test("实时日志：首帧 tail 取整段，之后带 nextOffset 只取增量", () async {

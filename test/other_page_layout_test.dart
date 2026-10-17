@@ -46,6 +46,8 @@ void main() {
         "两步验证",
         "任务日志",
         "登录日志",
+        "系统日志",
+        "通知日志",
         "扫描依赖",
         "依赖管理",
         "通知设置",
@@ -71,9 +73,9 @@ void main() {
     );
   });
 
-  test('青龙 12 个（三行）、App 6 个（一行四列 + 两空位）', () {
+  test('青龙 14 个（三整行 + 两格）、App 6 个（一行四列 + 两空位）', () {
     final String src = source.readAsStringSync();
-    expect(cellsOf(src, "青龙").length, 12);
+    expect(cellsOf(src, "青龙").length, 14);
     expect(cellsOf(src, "App 设置").length, 6);
     // 每行必须是 4 列，不能按条目数自适应
     expect(RegExp(r'for \(int i = 0; i < 4; i\+\+\)').hasMatch(src), isTrue);

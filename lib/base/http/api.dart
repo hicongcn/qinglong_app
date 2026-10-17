@@ -18,6 +18,7 @@ import 'package:qinglong_app/module/login/two_factor_init_bean.dart';
 import 'package:qinglong_app/module/others/dashboard/dashboard_overview_bean.dart';
 
 import '../../module/task/TaskBean2.dart';
+import '../../module/others/logs/notify_log_bean.dart';
 import '../ui/tree/models/script_data.dart';
 
 class Api {
@@ -47,6 +48,31 @@ class Api {
     return await getIt<Http>(instanceName: index.toString()).put<String>(
       getIt<Url>(instanceName: index.toString()).cronConcurrency,
       {"cronConcurrency": num},
+    );
+  }
+
+  /// 系统日志正文（纯文本）。面板那边是一个 blob，这里按文本取。
+  Future<HttpResponse<String>> systemLog({int limit = 1024 * 1024}) async {
+    return await getIt<Http>(instanceName: index.toString()).getText(
+      getIt<Url>(instanceName: index.toString()).systemLog,
+      {"limit": limit.toString()},
+    );
+  }
+
+  /// 清空系统日志（`DELETE /api/system/log`，2.23 起 `/system/log/remove` 已移除）
+  Future<HttpResponse<NullResponse>> clearSystemLog() async {
+    return await getIt<Http>(instanceName: index.toString()).delete<NullResponse>(
+      getIt<Url>(instanceName: index.toString()).systemLog,
+      null,
+    );
+  }
+
+  /// 通知日志（面板「系统设置 → 通知日志」）
+  Future<HttpResponse<List<NotifyLogBean>>> notifyLog() async {
+    return await getIt<Http>(instanceName: index.toString())
+        .get<List<NotifyLogBean>>(
+      getIt<Url>(instanceName: index.toString()).notifyLog,
+      {},
     );
   }
 

@@ -88,6 +88,41 @@ class Http {
     }
   }
 
+  /// 取**纯文本**响应（不套 `{code,data}` 信封）。
+  ///
+  /// 服务端 `GET /api/system/log` 返回的就是一段文本，走 [get] 会因为
+  /// `response.data["code"]` 不是 Map 而失败，故单开一个口子。
+  Future<HttpResponse<String>> getText(
+    String uri,
+    Map<String, String?>? json,
+  ) async {
+    try {
+      _init();
+      final response = await _dio!.get(
+        uri,
+        queryParameters: json,
+        // 必须显式声明 plain：默认 responseType=json 会让 dio 去解析这段文本，
+        // 直接抛 FormatException（首字符就不是 JSON）。
+        options: Options(responseType: ResponseType.plain),
+      );
+      final int status = response.statusCode ?? 0;
+      if (status >= 200 && status < 300) {
+        return HttpResponse<String>(
+          success: true,
+          code: status,
+          bean: response.data?.toString() ?? "",
+        );
+      }
+      return HttpResponse<String>(
+        success: false,
+        code: status,
+        message: "读取失败（HTTP $status）",
+      );
+    } on DioError catch (e) {
+      return exceptionHandler<String>(e, uri);
+    }
+  }
+
   /// 取「整个响应信封」。
   ///
   /// 现有 [get] 只能拿到 `serializationName` 指向的那一个字段，而日志分片接口
