@@ -489,6 +489,31 @@ class Api {
     );
   }
 
+  /// 批量修改变量名称（面板「批量修改变量名称」）：`PUT /api/envs/name {ids, name}`
+  Future<HttpResponse<NullResponse>> renameEnvs(List<String> ids, String name) async {
+    return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
+      getIt<Url>(instanceName: index.toString()).envRename,
+      {"ids": ids, "name": name},
+    );
+  }
+
+  /// 批量新增变量（导入用）。`POST /api/envs` 的 body 本身就是**数组**，
+  /// 所以一次请求能建多条，不用循环。
+  Future<HttpResponse<NullResponse>> addEnvs(List<Map<String, dynamic>> list) async {
+    return await getIt<Http>(instanceName: index.toString()).post<NullResponse>(
+      getIt<Url>(instanceName: index.toString()).addEnv,
+      list,
+    );
+  }
+
+  /// 读日志文件正文（`GET /api/logs/download`，纯文本响应，走 getText）
+  Future<HttpResponse<String>> logFileContent(String filename, String path) async {
+    return await getIt<Http>(instanceName: index.toString()).getText(
+      getIt<Url>(instanceName: index.toString()).logsDownload,
+      {"filename": filename, "path": path},
+    );
+  }
+
   Future<HttpResponse<NullResponse>> disableEnv(List<String> ids) async {
     return await getIt<Http>(instanceName: index.toString()).put<NullResponse>(
       getIt<Url>(instanceName: index.toString()).disableEnvs,

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:custom_sliding_segmented_control/custom_sliding_segmented_control.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:qinglong_app/base/base_state_widget.dart';
+import 'package:qinglong_app/base/http/http.dart';
 import 'package:qinglong_app/base/ql_app_bar.dart';
 import 'package:qinglong_app/base/routes.dart';
 import 'package:qinglong_app/base/single_account_page.dart';
@@ -15,6 +18,7 @@ import 'package:qinglong_app/module/env/env_bean.dart';
 import 'package:qinglong_app/module/env/env_viewmodel.dart';
 import 'package:qinglong_app/module/task/task_page.dart';
 import 'package:qinglong_app/utils/extension.dart';
+import 'package:qinglong_app/utils/icloud_utils.dart';
 import 'package:qinglong_app/utils/utils.dart';
 
 import '../../base/ui/enable_widget.dart';
@@ -221,6 +225,23 @@ class EnvPageState extends ConsumerState<EnvPage> with TickerProviderStateMixin 
                 ),
               ),
             ),
+            // 导入：粘贴面板「批量导出」的 JSON，或 NAME=VALUE 一行一条
+            if (!editMode)
+              CupertinoButton(
+                color: Colors.transparent,
+                padding: EdgeInsets.zero,
+                onPressed: _importEnvs,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Center(
+                    child: Icon(
+                      CupertinoIcons.square_arrow_down,
+                      size: 22,
+                      color: Theme.of(context).appBarTheme.iconTheme?.color,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
         body: BaseStateWidget<EnvViewModel>(
@@ -367,6 +388,20 @@ class EnvPageState extends ConsumerState<EnvPage> with TickerProviderStateMixin 
                       },
                     ),
                     EditModeButton(
+                      "改名",
+                      icon: CupertinoIcons.pencil,
+                      onTap: () {
+                        _executeCode(context, "改名");
+                      },
+                    ),
+                    EditModeButton(
+                      "导出",
+                      icon: CupertinoIcons.square_arrow_up,
+                      onTap: () {
+                        _executeCode(context, "导出");
+                      },
+                    ),
+                    EditModeButton(
                       "删除",
                       icon: CupertinoIcons.delete,
                       onTap: () {
@@ -389,6 +424,15 @@ class EnvPageState extends ConsumerState<EnvPage> with TickerProviderStateMixin 
   void _executeCode(BuildContext context, String s) {
     if (checkedIds.isEmpty) {
       "至少选择1个变量".toast();
+      return;
+    }
+    // 改名 / 导出 不走「确认启用禁用删除」那套：一个是输入框，一个是直接写文件
+    if (s == "改名") {
+      _renameEnvs();
+      return;
+    }
+    if (s == "导出") {
+      _exportEnvs();
       return;
     }
 
@@ -458,6 +502,207 @@ class EnvPageState extends ConsumerState<EnvPage> with TickerProviderStateMixin 
 
   void deleteEnvs() {
     ref.read(SingleAccountPageState.ofEnvProvider(context)(getProviderName(context)).notifier).delEnvs(context, checkedIds.toList());
+  }
+
+  /// 批量改名：`PUT /api/envs/name {ids, name}`
+  void _renameEnvs() {
+    final TextEditingController controller = TextEditingController();
+    showCupertinoDialog(
+      useRootNavigator: false,
+      context: context,
+      builder: (context1) => CupertinoAlertDialog(
+        title: Text("修改 ${checkedIds.length} 个变量的名称"),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            textAlign: TextAlign.center,
+            decoration: const InputDecoration(hintText: "新名称"),
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text("取消", style: TextStyle(color: Color(0xff999999))),
+            onPressed: () => Navigator.of(context1).pop(),
+          ),
+          CupertinoDialogAction(
+            child: Text(
+              "确定",
+              style: TextStyle(color: ref.watch(themeProvider).primaryColor),
+            ),
+            onPressed: () async {
+              Navigator.of(context1).pop();
+              final String name = controller.text.trim();
+              if (name.isEmpty) {
+                "名称不能为空".toast();
+                return;
+              }
+              final HttpResponse<NullResponse> res =
+                  await SingleAccountPageState.ofApi(context)
+                      .renameEnvs(checkedIds.toList(), name);
+              if (!mounted) return;
+              res.message.toast();
+              if (res.success) {
+                editMode = false;
+                removeOverlay();
+                checkedIds.clear();
+                setState(() {});
+                ref
+                    .read(SingleAccountPageState.ofEnvProvider(context)(
+                            getProviderName(context))
+                        .notifier)
+                    .loadData(context, false);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 批量导出：和面板一致，导出 `[{value,name,remarks}]` 的 JSON 文件。
+  /// 面板还带 labels，客户端没有标签体系，不带。
+  void _exportEnvs() async {
+    final EnvViewModel vm = ref.read(
+        SingleAccountPageState.ofEnvProvider(context)(getProviderName(context)));
+    final List<Map<String, dynamic>> data = vm.list
+        .where((e) => checkedIds.contains(e.sId))
+        .map((e) => <String, dynamic>{
+              "value": e.value ?? "",
+              "name": e.name ?? "",
+              "remarks": e.remarks ?? "",
+            })
+        .toList();
+    if (data.isEmpty) {
+      "没有可导出的变量".toast();
+      return;
+    }
+    try {
+      final String name = FileUtil.timestampedName("env.json");
+      await FileUtil(0).writeDownloadFile(name, jsonEncode(data));
+      "已导出 ${data.length} 个变量，写入qinglong_app文件夹下的 $name".toast2();
+    } catch (e) {
+      e.toString().toast();
+    }
+  }
+
+  /// 导入：支持面板「批量导出」的 JSON，也支持 `NAME=VALUE` 一行一条。
+  void _importEnvs() {
+    final TextEditingController controller = TextEditingController();
+    showCupertinoDialog(
+      useRootNavigator: false,
+      context: context,
+      builder: (context1) => CupertinoAlertDialog(
+        title: const Text("导入环境变量"),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "粘贴面板「批量导出」得到的 JSON；也支持每行一条 NAME=VALUE。",
+                style: TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: controller,
+                maxLines: 8,
+                minLines: 4,
+                style: const TextStyle(fontSize: 12, fontFamily: "Menlo"),
+                decoration: const InputDecoration(
+                  hintText: '[{"name":"JD_COOKIE","value":"xxx","remarks":""}]',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text("取消", style: TextStyle(color: Color(0xff999999))),
+            onPressed: () => Navigator.of(context1).pop(),
+          ),
+          CupertinoDialogAction(
+            child: Text(
+              "导入",
+              style: TextStyle(color: ref.watch(themeProvider).primaryColor),
+            ),
+            onPressed: () async {
+              Navigator.of(context1).pop();
+              final List<Map<String, dynamic>>? list =
+                  _parseEnvInput(controller.text);
+              if (list == null) {
+                "格式不对：需要 JSON 数组或 NAME=VALUE".toast();
+                return;
+              }
+              if (list.isEmpty) {
+                "没有解析到变量".toast();
+                return;
+              }
+              final HttpResponse<NullResponse> res =
+                  await SingleAccountPageState.ofApi(context).addEnvs(list);
+              if (!mounted) return;
+              (res.success ? "已导入 ${list.length} 个变量" : res.message).toast();
+              if (res.success) {
+                ref
+                    .read(SingleAccountPageState.ofEnvProvider(context)(
+                            getProviderName(context))
+                        .notifier)
+                    .loadData(context, false);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 解析导入文本。JSON 数组 → 对象列表；否则按 `NAME=VALUE` 逐行。
+  /// 返回 null 表示完全解析不出来。
+  List<Map<String, dynamic>>? _parseEnvInput(String raw) {
+    final String text = raw.trim();
+    if (text.isEmpty) return <Map<String, dynamic>>[];
+
+    if (text.startsWith("[") || text.startsWith("{")) {
+      try {
+        final dynamic decoded = jsonDecode(text);
+        final List<dynamic> items = decoded is List ? decoded : <dynamic>[decoded];
+        final List<Map<String, dynamic>> out = <Map<String, dynamic>>[];
+        for (final dynamic item in items) {
+          if (item is! Map) continue;
+          final String name = (item["name"] ?? "").toString().trim();
+          if (name.isEmpty) continue;
+          out.add(<String, dynamic>{
+            "name": name,
+            "value": (item["value"] ?? "").toString(),
+            "remarks": (item["remarks"] ?? "").toString(),
+          });
+        }
+        return out;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    final List<Map<String, dynamic>> out = <Map<String, dynamic>>[];
+    for (final String line in text.split("\n")) {
+      final String s = line.trim();
+      if (s.isEmpty || s.startsWith("#")) continue;
+      final int i = s.indexOf("=");
+      if (i <= 0) continue;
+      String name = s.substring(0, i).trim();
+      String value = s.substring(i + 1).trim();
+      // 去掉包裹的引号：NAME='VALUE'
+      if (value.length >= 2 &&
+          ((value.startsWith("'") && value.endsWith("'")) ||
+              (value.startsWith('"') && value.endsWith('"')))) {
+        value = value.substring(1, value.length - 1);
+      }
+      if (name.isEmpty) continue;
+      out.add(<String, dynamic>{"name": name, "value": value, "remarks": ""});
+    }
+    return out;
   }
 
   void removeOverlay() {

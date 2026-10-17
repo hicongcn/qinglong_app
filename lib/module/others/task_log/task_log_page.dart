@@ -13,6 +13,7 @@ import 'package:qinglong_app/base/ui/search_cell.dart';
 import 'package:qinglong_app/module/others/task_log/task_log_bean.dart';
 import 'package:qinglong_app/module/task/intime_log/intime_history_log_page.dart';
 import 'package:qinglong_app/utils/extension.dart';
+import 'package:qinglong_app/utils/icloud_utils.dart';
 
 import '../../../main.dart';
 import '../../home/system_bean.dart';
@@ -237,8 +238,17 @@ class _TaskLogPageState extends ConsumerState<TaskLogPage> with LazyLoadState<Ta
                         key: ValueKey(item.name ?? ""),
                         endActionPane: ActionPane(
                           motion: const StretchMotion(),
-                          extentRatio: 0.2,
+                          extentRatio: 0.4,
                           children: [
+                            // 下载：面板「日志管理 → 下载」，走 /logs/download
+                            SlidableAction(
+                              backgroundColor: ref.watch(themeProvider).primaryColor,
+                              onPressed: (_) {
+                                downloadLog(item);
+                              },
+                              foregroundColor: Colors.white,
+                              icon: CupertinoIcons.square_arrow_down,
+                            ),
                             SlidableAction(
                               backgroundColor: const Color(0xffEA4D3E),
                               onPressed: (_) {
@@ -338,6 +348,29 @@ class _TaskLogPageState extends ConsumerState<TaskLogPage> with LazyLoadState<Ta
   @override
   void onLazyLoad() {
     loadData();
+  }
+
+  /// 下载日志文件正文。
+  ///
+  /// 老接口 `GET /api/logs/<file>` 已下线（固定 410），面板改用
+  /// `GET /api/logs/download?filename=&path=`（纯文本），这里同样走那个。
+  void downloadLog(TaskLogBean item) async {
+    EasyLoading.show(status: "下载中...");
+    final res = await SingleAccountPageState.ofApi(context)
+        .logFileContent(item.name ?? "", "");
+    EasyLoading.dismiss();
+    if (!res.success) {
+      res.message.toast();
+      return;
+    }
+    try {
+      // 带时间戳，避免同名重复下载互相覆盖
+      final String name = FileUtil.timestampedName(item.name ?? "log.txt");
+      await FileUtil(0).writeDownloadFile(name, res.bean ?? "");
+      "已写入qinglong_app文件夹下,文件名$name".toast2();
+    } catch (e) {
+      e.toString().toast();
+    }
   }
 
   void deleteFold(TaskLogBean item) async {

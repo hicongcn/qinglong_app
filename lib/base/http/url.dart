@@ -23,6 +23,7 @@ class Url {
 
   /// 环境变量置顶 / 取消置顶
   get envPin => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/envs/pin" : "/api/envs/pin";
+  get envRename => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/envs/name" : "/api/envs/name";
 
   get envUnpin => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/envs/unpin" : "/api/envs/unpin";
 
@@ -79,6 +80,9 @@ class Url {
   get enableEnvs => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/envs/enable" : "/api/envs/enable";
 
   get loginLog => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/user/login-log" : "/api/user/login-log";
+
+  /// 下载日志文件正文（`GET /api/logs/download?filename=&path=`，纯文本）
+  get logsDownload => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/logs/download" : "/api/logs/download";
 
   get logFoldDelete => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/logs" : "/api/logs";
 

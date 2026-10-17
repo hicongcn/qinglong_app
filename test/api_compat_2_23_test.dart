@@ -54,6 +54,10 @@ void main() {
   /// DELETE /api/system/log 是否被调用过
   bool systemLogCleared = false;
 
+  /// POST /api/envs（批量导入）与 PUT /api/envs/name 的请求体
+  List<String> envImportBodies = <String>[];
+  List<String> envRenameBodies = <String>[];
+
   setUpAll(() async {
     // flutter_test 默认拦截网络（一律返回 400），这里放行，改用本机 mock 服务
     HttpOverrides.global = null;
@@ -220,6 +224,18 @@ void main() {
           } else {
             _sendRaw(req, 200, systemLogBody);
           }
+          return;
+        case "/api/envs":
+          if (req.method == "POST") envImportBodies.add(body);
+          _send(req, {"code": 200, "data": {}});
+          return;
+        case "/api/envs/name":
+          envRenameBodies.add(body);
+          _send(req, {"code": 200, "data": {}});
+          return;
+        case "/api/logs/download":
+          // 和系统日志一样是纯文本，不套 JSON 信封
+          _sendRaw(req, 200, "2026-10-17 12:00:00 任务开始\n2026-10-17 12:00:05 任务结束\n");
           return;
         case "/api/dashboard/trend":
           _send(req, {
@@ -528,6 +544,48 @@ void main() {
     expect(system.bean?.memUsagePercent, "61.5");
     expect(system.bean?.memPercentValue, closeTo(0.615, 0.001));
     expect(system.bean?.uptimeText, "1 天 1 小时");
+  });
+
+  test("环境变量：批量改名走 PUT /api/envs/name，字段 ids/name", () async {
+    requests.clear();
+    envImportBodies = <String>[];
+    envRenameBodies = <String>[];
+    final api = Api(0);
+    final res = await api.renameEnvs(["1", "2"], "JD_COOKIE");
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(requests.single, startsWith("PUT /api/envs/name"));
+    expect(envRenameBodies.single, contains('"ids"'));
+    expect(envRenameBodies.single, contains("JD_COOKIE"));
+  });
+
+  test("环境变量导入：POST /api/envs 的 body 直接是数组（一次建多条）", () async {
+    requests.clear();
+    envImportBodies = <String>[];
+    envRenameBodies = <String>[];
+    final api = Api(0);
+    final res = await api.addEnvs(<Map<String, dynamic>>[
+      {"name": "A", "value": "1", "remarks": ""},
+      {"name": "B", "value": "2", "remarks": "备注"},
+    ]);
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(requests.single, startsWith("POST /api/envs"));
+    expect(envImportBodies.single.trimLeft(), startsWith("["));
+    expect(envImportBodies.single, contains('"name":"B"'));
+  });
+
+  test("日志下载：GET /api/logs/download 是纯文本", () async {
+    requests.clear();
+    envImportBodies = <String>[];
+    envRenameBodies = <String>[];
+    final api = Api(0);
+    final res = await api.logFileContent("task.log", "");
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(res.bean, contains("任务开始"));
+    expect(requests.single, startsWith("GET /api/logs/download?"));
+    expect(requests.single, contains("filename=task.log"));
   });
 
   test("系统日志：GET /api/system/log 是纯文本，不走 JSON 信封", () async {
