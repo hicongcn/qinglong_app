@@ -30,6 +30,68 @@ class SettingPage extends ConsumerStatefulWidget {
 }
 
 class _SettingPageState extends ConsumerState<SettingPage> {
+  /// 当前外观的文字描述
+  String _appearanceLabel() {
+    if (SpUtil.getBool(spThemeFollowSystem, defValue: false)) {
+      return "跟随系统";
+    }
+    final int style = SpUtil.getInt(spThemeStyle, defValue: modeWhite);
+    if (style == modeDark) return "深色";
+    if (style == modeWhite) return "白色";
+    return "浅色";
+  }
+
+  /// 选外观。原来这里是「白色主题 / 黑色主题 / 跟随系统」三个开关，
+  /// 三个并列的互斥开关既占地方又容易看错，合并成一个选择器。
+  Future<void> _pickAppearance() async {
+    final bool follow = SpUtil.getBool(spThemeFollowSystem, defValue: false);
+    final int style = SpUtil.getInt(spThemeStyle, defValue: modeWhite);
+
+    final String? picked = await showCupertinoModalPopup<String>(
+      context: context,
+      builder: (ctx) => CupertinoActionSheet(
+        title: const Text("外观"),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(ctx).pop("follow"),
+            child: Text("跟随系统${follow ? "（当前）" : ""}"),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(ctx).pop("light"),
+            child: Text("浅色${!follow && style == modeLight ? "（当前）" : ""}"),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(ctx).pop("white"),
+            child: Text("白色${!follow && style == modeWhite ? "（当前）" : ""}"),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(ctx).pop("dark"),
+            child: Text("深色${!follow && style == modeDark ? "（当前）" : ""}"),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text("取消"),
+        ),
+      ),
+    );
+
+    if (picked == null) return;
+    // 注意别用 themeProvider 当变量名，会和全局 provider 撞名
+    final theme = ref.read(themeProvider.notifier);
+    if (picked == "follow") {
+      SpUtil.putBool(spThemeFollowSystem, true);
+      theme.changeThemeWithSystemStatus();
+    } else {
+      SpUtil.putBool(spThemeFollowSystem, false);
+      final int target = picked == "dark"
+          ? modeDark
+          : (picked == "white" ? modeWhite : modeLight);
+      theme.changeTheme(target);
+    }
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemBean? systemBean;
@@ -64,7 +126,7 @@ class _SettingPageState extends ConsumerState<SettingPage> {
                       left: 30,
                     ),
                     child: Text(
-                      "高级功能",
+                      "App 设置",
                       style: TextStyle(
                         color: ref.watch(themeProvider).themeColor.descColor(),
                         fontSize: 12,
@@ -226,53 +288,55 @@ class _SettingPageState extends ConsumerState<SettingPage> {
                             vertical: 3,
                             horizontal: 15,
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                CupertinoIcons.sun_max,
-                                color: ref.watch(themeProvider).primaryColor,
-                                size: 20,
-                              ),
-                              const SizedBox(
-                                width: 15,
-                              ),
-                              Text(
-                                "白色主题",
-                                style: TextStyle(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: _pickAppearance,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  CupertinoIcons.circle_lefthalf_fill,
+                                  color: ref.watch(themeProvider).primaryColor,
+                                  size: 20,
+                                ),
+                                const SizedBox(
+                                  width: 15,
+                                ),
+                                Text(
+                                  "外观",
+                                  style: TextStyle(
+                                    color: ref
+                                        .watch(themeProvider)
+                                        .themeColor
+                                        .titleColor(),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  _appearanceLabel(),
+                                  style: TextStyle(
+                                    color: ref
+                                        .watch(themeProvider)
+                                        .themeColor
+                                        .descColor(),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 5,
+                                ),
+                                Icon(
+                                  CupertinoIcons.right_chevron,
+                                  size: 16,
                                   color: ref
                                       .watch(themeProvider)
                                       .themeColor
-                                      .titleColor(),
-                                  fontSize: 16,
+                                      .descColor(),
                                 ),
-                              ),
-                              const Spacer(),
-                              Transform.scale(
-                                scale: 0.9,
-                                child: CupertinoSwitch(
-                                  activeColor:
-                                      ref.watch(themeProvider).primaryColor,
-                                  value: SpUtil.getInt(spThemeStyle,
-                                          defValue: modeLight) ==
-                                      modeWhite,
-                                  onChanged: (open) async {
-                                    SpUtil.putBool(spThemeFollowSystem, false);
-                                    if (open) {
-                                      ref
-                                          .read(themeProvider.notifier)
-                                          .changeTheme(modeWhite);
-                                    } else {
-                                      ref
-                                          .read(themeProvider.notifier)
-                                          .changeTheme(modeLight);
-                                    }
-                                    setState(() {});
-                                  },
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -281,22 +345,7 @@ class _SettingPageState extends ConsumerState<SettingPage> {
               ],
             ),
             const SizedBox(
-              height: 15,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 30,
-              ),
-              child: Text(
-                "通用功能",
-                style: TextStyle(
-                  color: ref.watch(themeProvider).themeColor.descColor(),
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            const SizedBox(
-              height: 10,
+              height: 20,
             ),
             Container(
               margin: const EdgeInsets.symmetric(
@@ -438,116 +487,6 @@ class _SettingPageState extends ConsumerState<SettingPage> {
                                 defValue: false),
                             onChanged: (open) async {
                               await SpUtil.putBool(spLogAutoJump2Bottom, open);
-                              setState(() {});
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(
-                    indent: 55,
-                    height: 1,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 3,
-                      horizontal: 15,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          CupertinoIcons.moon_circle,
-                          color: ref.watch(themeProvider).primaryColor,
-                          size: 20,
-                        ),
-                        const SizedBox(
-                          width: 15,
-                        ),
-                        Text(
-                          "黑色主题",
-                          style: TextStyle(
-                            color: ref
-                                .watch(themeProvider)
-                                .themeColor
-                                .titleColor(),
-                            fontSize: 16,
-                          ),
-                        ),
-                        const Spacer(),
-                        Transform.scale(
-                          scale: 0.9,
-                          child: CupertinoSwitch(
-                            activeColor: ref.watch(themeProvider).primaryColor,
-                            value: SpUtil.getInt(spThemeStyle,
-                                    defValue: modeLight) ==
-                                modeDark,
-                            onChanged: (open) async {
-                              SpUtil.putBool(spThemeFollowSystem, false);
-                              if (open) {
-                                ref
-                                    .read(themeProvider.notifier)
-                                    .changeTheme(modeDark);
-                              } else {
-                                ref
-                                    .read(themeProvider.notifier)
-                                    .changeTheme(modeLight);
-                              }
-                              setState(() {});
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(
-                    indent: 55,
-                    height: 1,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 3,
-                      horizontal: 15,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          SchedulerBinding.instance.window.platformBrightness ==
-                                  Brightness.dark
-                              ? CupertinoIcons.moon_circle
-                              : CupertinoIcons.sun_max,
-                          color: ref.watch(themeProvider).primaryColor,
-                          size: 20,
-                        ),
-                        const SizedBox(
-                          width: 15,
-                        ),
-                        Text(
-                          "跟随系统",
-                          style: TextStyle(
-                            color: ref
-                                .watch(themeProvider)
-                                .themeColor
-                                .titleColor(),
-                            fontSize: 16,
-                          ),
-                        ),
-                        const Spacer(),
-                        Transform.scale(
-                          scale: 0.9,
-                          child: CupertinoSwitch(
-                            activeColor: ref.watch(themeProvider).primaryColor,
-                            value: SpUtil.getBool(spThemeFollowSystem,
-                                defValue: false),
-                            onChanged: (open) async {
-                              SpUtil.putBool(spThemeFollowSystem, open);
-                              ref
-                                  .read(themeProvider.notifier)
-                                  .changeThemeWithSystemStatus();
                               setState(() {});
                             },
                           ),
