@@ -29,11 +29,15 @@ void main() {
     });
   });
 
-  test('设置页有「两步验证」入口', () {
-    final String setting = File('lib/module/setting_page.dart').readAsStringSync();
-    expect(setting.contains('TwoFactorPage'), isTrue,
-        reason: '设置页没有两步验证入口，用户无法开启/关闭');
-    expect(setting.contains('两步验证'), isTrue);
+  test('「我的」页有「两步验证 / 运行概览」入口', () {
+    // 「我的」tab 实际渲染的是 OtherPage（home_page.dart 的 LazyIndexedStack
+    // 第 4 个 child），不是二级的 SettingPage —— 入口加在这里才对。
+    final String other = File('lib/module/others/other_page.dart').readAsStringSync();
+    expect(other.contains('TwoFactorPage'), isTrue,
+        reason: '「我的」页没有两步验证入口，用户无法开启/关闭');
+    expect(other.contains('两步验证'), isTrue);
+    expect(other.contains('DashboardPage'), isTrue,
+        reason: '「我的」页没有运行概览入口');
   });
 
   test('脚本详情页有「重命名」入口且真的调了接口', () {

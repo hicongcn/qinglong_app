@@ -12,6 +12,8 @@ import 'package:qinglong_app/base/single_account_page.dart';
 import 'package:qinglong_app/base/sp_const.dart';
 import 'package:qinglong_app/base/theme.dart';
 import 'package:qinglong_app/base/ui/lazy_load_state.dart';
+import 'package:qinglong_app/module/others/dashboard/dashboard_page.dart';
+import 'package:qinglong_app/module/others/two_factor/two_factor_page.dart';
 import 'package:qinglong_app/module/others/change_account_page.dart';
 import 'package:qinglong_app/module/others/sort_account_page.dart';
 import 'package:qinglong_app/module/others/text_size_page.dart';
@@ -493,7 +495,74 @@ class OtherPageState extends ConsumerState<OtherPage>
                         height: 5,
                       ),
                       Text(
-                        "高级功能",
+                        "面板",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: ref
+                              .watch(themeProvider)
+                              .themeColor
+                              .titleColor(),
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: buildOtherFun2(
+                                "运行概览", CupertinoIcons.chart_bar_alt_fill, () {
+                              Navigator.of(context).push(
+                                CupertinoPageRoute(
+                                  builder: (context) => const DashboardPage(),
+                                ),
+                              );
+                            }),
+                          ),
+                          Expanded(
+                            child: buildOtherFun2(
+                                "两步验证", CupertinoIcons.lock_shield, () {
+                              Navigator.of(context).push(
+                                CupertinoPageRoute(
+                                  builder: (context) => const TwoFactorPage(),
+                                ),
+                              );
+                            }),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(
+                  height: 20,
+                ),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 15),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: ref
+                        .watch(themeProvider)
+                        .themeColor
+                        .settingBordorColor(),
+                  ),
+                  width: MediaQuery.of(context).size.width,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 15,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      Text(
+                        "工具",
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
@@ -584,7 +653,7 @@ class OtherPageState extends ConsumerState<OtherPage>
                         height: 5,
                       ),
                       Text(
-                        "基础功能",
+                        "设置",
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
