@@ -261,11 +261,18 @@ class Api {
     String cron, {
     int? id,
     int? allowMultipleInstances,
+    List<String>? extraSchedules,
   }) async {
     var data = <String, dynamic>{"name": name, "command": command, "schedule": cron};
 
     if (allowMultipleInstances != null) {
       data["allow_multiple_instances"] = allowMultipleInstances;
+    }
+    // extra_schedules 服务端是 Array<{schedule}>；传空数组表示清空全部额外规则，
+    // 传 null 则完全不带该字段（服务端沿用原值）。
+    if (extraSchedules != null) {
+      data["extra_schedules"] =
+          extraSchedules.map((s) => {"schedule": s}).toList();
     }
 
     if (id != null) {

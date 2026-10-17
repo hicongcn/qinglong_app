@@ -70,16 +70,19 @@ class AppKeyViewModel extends BaseViewModel {
   }
 
   static List<String> getScopeNames(List<dynamic>? scopeKeys) {
-    //"crons","envs","configs","scripts","logs","dependencies","system"
-    //配置文件脚本管理环境变量任务日志
+    // 与面板一致（服务端 src/utils/config.ts 的 scopes，共 9 项）。
+    // 原先缺了 subscriptions / dashboard —— 这两个在面板里可选，
+    // 客户端既看不到也勾不上。
     Map<String, String> keyMaps = {
       "crons": "定时任务",
       "envs": "环境变量",
+      "subscriptions": "订阅管理",
       "configs": "配置文件",
       "scripts": "脚本管理",
       "logs": "任务日志",
       "dependencies": "依赖管理",
       "system": "系统信息",
+      "dashboard": "仪表盘",
     };
 
     List<String> result = [];
@@ -91,16 +94,17 @@ class AppKeyViewModel extends BaseViewModel {
   }
 
   static List<String> getScopeKeys(List<String> scopeNames) {
-    //"crons","envs","configs","scripts","logs","dependencies","system"
-    //配置文件脚本管理环境变量任务日志
+    // 与面板一致（服务端 src/utils/config.ts 的 scopes，共 9 项）
     Map<String, String> keyMaps = {
       "定时任务": "crons",
       "环境变量": "envs",
+      "订阅管理": "subscriptions",
       "配置文件": "configs",
       "脚本管理": "scripts",
       "任务日志": "logs",
       "依赖管理": "dependencies",
       "系统信息": "system",
+      "仪表盘": "dashboard",
     };
 
     List<String> result = [];

@@ -184,14 +184,17 @@ class _AddAppKeyPageState extends ConsumerState<AddAppKeyPage> {
         searchHintText: "搜索",
         bottomSheetTitle: "请选择你需要的权限",
         searchBackgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        // 顺序与面板保持一致（服务端 src/utils/config.ts 的 scopes）
         dataList: [
           SelectedListItem(selectedPermissions.contains("定时任务"), "定时任务"),
           SelectedListItem(selectedPermissions.contains("环境变量"), "环境变量"),
+          SelectedListItem(selectedPermissions.contains("订阅管理"), "订阅管理"),
           SelectedListItem(selectedPermissions.contains("配置文件"), "配置文件"),
           SelectedListItem(selectedPermissions.contains("脚本管理"), "脚本管理"),
           SelectedListItem(selectedPermissions.contains("任务日志"), "任务日志"),
           SelectedListItem(selectedPermissions.contains("依赖管理"), "依赖管理"),
           SelectedListItem(selectedPermissions.contains("系统信息"), "系统信息"),
+          SelectedListItem(selectedPermissions.contains("仪表盘"), "仪表盘"),
         ],
         selectedItems: (List<String> selectedList) {
           selectedPermissions.clear();

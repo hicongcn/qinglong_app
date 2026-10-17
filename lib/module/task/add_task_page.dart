@@ -46,6 +46,11 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
   /// 关闭时：任务到点触发而上一次还在跑 → 服务端会先终止旧实例再启动新的。
   bool allowMultipleInstances = false;
 
+  /// 额外调度规则（服务端 `extra_schedules`）：一个任务除主规则外还能挂多条。
+  /// 服务端的 cron 校验会把「3 个以上、等差、且一直排到边界」的逗号列表判为无效
+  /// （cron-parser 缩写出的 `N/M` 写法 node-cron 不接受），这种情况拆成多条规则即可。
+  final List<TextEditingController> _extraControllers = [];
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +60,9 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
       _commandController.text = taskBean.command ?? "";
       _cronController.text = taskBean.schedule ?? "";
       allowMultipleInstances = taskBean.allowMultipleInstances == 1;
+      for (final String rule in taskBean.extraSchedules ?? <String>[]) {
+        _extraControllers.add(TextEditingController(text: rule));
+      }
     } else {
       taskBean = TaskBean();
     }
@@ -234,6 +242,94 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
                     ],
                   ),
                   const SizedBox(
+                    height: 20,
+                  ),
+                  Text(
+                    "额外调度规则",
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: ref.watch(themeProvider).themeColor.titleColor(),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 5,
+                  ),
+                  Text(
+                    "同一个任务可以挂多条时间规则，主规则之外的时间点写在这里。"
+                    "服务端的定时规则校验会把「3 个以上、等差且排到边界」的逗号列表误判为无效，"
+                    "这种情况拆成多条规则就能绕过。",
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.5,
+                      color: ref.watch(themeProvider).themeColor.descColor(),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  ..._extraControllers.asMap().entries.map((entry) {
+                    final int index = entry.key;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: entry.value,
+                              minLines: 1,
+                              textAlignVertical: TextAlignVertical.center,
+                              decoration: const InputDecoration(
+                                hintText: "秒(可选) 分\t时 天 月 周",
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          CupertinoButton(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            color: Colors.transparent,
+                            onPressed: () {
+                              setState(() {
+                                _extraControllers.removeAt(index).dispose();
+                              });
+                            },
+                            child: const Icon(
+                              CupertinoIcons.minus_circle,
+                              size: 20,
+                              color: Color(0xffFB5858),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _extraControllers.add(TextEditingController());
+                      });
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          CupertinoIcons.add_circled,
+                          size: 18,
+                          color: ref.watch(themeProvider).primaryColor,
+                        ),
+                        const SizedBox(
+                          width: 5,
+                        ),
+                        Text(
+                          "添加一条规则",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: ref.watch(themeProvider).primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(
                     height: 30,
                   ),
                   Visibility(
@@ -316,6 +412,15 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
       }
       taskBean.allowMultipleInstances = allowValue;
 
+      // 额外调度规则：丢掉空行；编辑时总是提交（空数组 = 清空全部），
+      // 新建时若一条都没填则不带该字段。
+      final List<String> extraSchedules = _extraControllers
+          .map((c) => c.text.trim())
+          .where((t) => t.isNotEmpty)
+          .toList();
+      final bool isEditing = taskBean.id != null;
+      taskBean.extraSchedules = extraSchedules;
+
       await EasyLoading.show(status: " 提交中");
       HttpResponse<NullResponse> response = await SingleAccountPageState.ofApi(context).addTask(
         _nameController.text,
@@ -323,6 +428,8 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
         _cronController.text.trim(),
         id: taskBean.id,
         allowMultipleInstances: allowValue,
+        extraSchedules:
+            (isEditing || extraSchedules.isNotEmpty) ? extraSchedules : null,
       );
       await EasyLoading.dismiss();
       if (response.success) {
@@ -336,6 +443,18 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
       e.toString().toast();
       EasyLoading.dismiss();
     }
+  }
+
+  @override
+  void dispose() {
+    for (final TextEditingController c in _extraControllers) {
+      c.dispose();
+    }
+    _nameController.dispose();
+    _commandController.dispose();
+    _cronController.dispose();
+    focusNode.dispose();
+    super.dispose();
   }
 
   @override

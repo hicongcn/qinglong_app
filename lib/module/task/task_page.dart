@@ -1113,9 +1113,16 @@ class TaskItemCell extends StatelessWidget {
                                   ),
                                 ),
                                 SizedBox(
-                                  width: bean.status == 0 ? 7 : 0,
+                                  width: (bean.status == 0 || bean.status == 3)
+                                      ? 7
+                                      : 0,
                                 ),
-                                bean.status == 0 ? const RunningWidget() : const SizedBox.shrink(),
+                                // 0 = 运行中，3 = 队列中（并发位被占满，等待中）
+                                bean.status == 0
+                                    ? const RunningWidget()
+                                    : (bean.status == 3
+                                        ? const QueuedWidget()
+                                        : const SizedBox.shrink()),
                                 const SizedBox(
                                   width: 7,
                                 ),

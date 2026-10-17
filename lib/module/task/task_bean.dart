@@ -25,6 +25,12 @@ class TaskBean {
   String? updatedAt;
   String? createdAt;
 
+  /// 额外调度规则（服务端 `extra_schedules`，元素形如 `{"schedule": "0 9 * * *"}`）。
+  ///
+  /// 一个任务除主 `schedule` 外还能挂多条规则。用来绕开"服务端 cron 校验把
+  /// 等差逗号列表误判为无效、只能拆成多个任务"的场景。
+  List<String>? extraSchedules;
+
   /// 是否允许同时运行多个实例（服务端字段 `allow_multiple_instances`，1=允许 / 0=单实例）。
   /// 服务端默认 0。**为 0 时，任务到点触发而上一次实例还在运行，服务端会先终止旧实例
   /// 再启动新的**（见 `back/shared/runCron.ts`），表现为"任务跑一会儿自己停了"。
@@ -70,6 +76,13 @@ class TaskBean {
       lastRunningTime = json['last_running_time'];
       pid = json['pid'].toString();
       allowMultipleInstances = json['allow_multiple_instances'];
+      if (json['extra_schedules'] is List) {
+        extraSchedules = (json['extra_schedules'] as List)
+            .map((e) => e is Map ? e['schedule']?.toString() : e?.toString())
+            .whereType<String>()
+            .where((s) => s.isNotEmpty)
+            .toList();
+      }
     } catch (e) {
       logger.e(e);
     }
@@ -95,6 +108,10 @@ class TaskBean {
     data['last_running_time'] = this.lastRunningTime;
     data['pid'] = this.pid;
     data['allow_multiple_instances'] = this.allowMultipleInstances;
+    if (this.extraSchedules != null) {
+      data['extra_schedules'] =
+          this.extraSchedules!.map((s) => {"schedule": s}).toList();
+    }
     return data;
   }
 

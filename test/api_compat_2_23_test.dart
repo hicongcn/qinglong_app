@@ -539,6 +539,49 @@ void main() {
     expect(sent["allow_multiple_instances"], 0);
   });
 
+  test("新建任务：额外调度规则按 [{schedule}] 格式提交", () async {
+    final api = Api(0);
+    final res = await api.addTask(
+      "demo",
+      "task demo.js",
+      "0 9 * * *",
+      extraSchedules: ["0 18 * * *", "0 23 * * *"],
+    );
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    final sent = jsonDecode(cronBodies.single) as Map<String, dynamic>;
+    expect(sent["extra_schedules"], [
+      {"schedule": "0 18 * * *"},
+      {"schedule": "0 23 * * *"},
+    ], reason: "服务端 extra_schedules 是 Array<{schedule:string}>");
+  });
+
+  test("新建任务：没填额外规则时不该带该字段", () async {
+    final api = Api(0);
+    final res = await api.addTask("demo", "task demo.js", "0 9 * * *");
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    final sent = jsonDecode(cronBodies.single) as Map<String, dynamic>;
+    expect(sent.containsKey("extra_schedules"), isFalse,
+        reason: "传 null 时整个字段都不该出现");
+  });
+
+  test("编辑任务：清空额外规则要提交空数组（而不是不传）", () async {
+    final api = Api(0);
+    final res = await api.addTask(
+      "demo",
+      "task demo.js",
+      "0 9 * * *",
+      id: 7,
+      extraSchedules: <String>[],
+    );
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    final sent = jsonDecode(cronBodies.single) as Map<String, dynamic>;
+    expect(sent["extra_schedules"], isEmpty,
+        reason: "空数组表示清空全部额外规则；不传则服务端会沿用原值");
+  });
+
   test("任务列表：解开 data.data 双层包装，且只传 searchValue", () async {
     final api = Api(0);
     final res = await api.crons2_13_09();
