@@ -191,13 +191,39 @@ class Http {
       }
 
       if (e.response != null && e.response!.data != null) {
-        return HttpResponse(success: false, message: e.response?.data["message"] ?? e.message, code: e.response?.data["code"] ?? 0);
+        final dynamic body = e.response!.data;
+        // 服务端的参数校验（celebrate）走的是 HTTP 4xx + 固定格式：
+        //   { status: 400, message: "Validation failed",
+        //     validation: { body: { keys: ["schedule"], message: '"schedule" failed ... 无效的定时规则' } } }
+        // 顶层 message 只是英文的 "Validation failed"，真正能看懂的原因在 validation 里。
+        // 这里优先取具体校验信息，取不到再退回顶层 message。
+        final String? detail = _celebrateDetail(body is Map ? body["validation"] : null);
+        return HttpResponse(
+          success: false,
+          message: detail ?? body["message"] ?? e.message,
+          code: body["code"] ?? 0,
+        );
       } else {
         return HttpResponse(success: false, message: e.message, code: e.response?.statusCode ?? 0);
       }
     } catch (e) {
       return HttpResponse(success: false, message: e.toString(), code: 400);
     }
+  }
+
+  /// 从 celebrate 的 validation 结构里取出具体校验信息。
+  ///
+  /// 形如 `{ body: { message: '...' } }`、`{ query: {...} }` 等；取不到返回 null。
+  static String? _celebrateDetail(dynamic validation) {
+    if (validation is! Map) return null;
+    for (final String section in <String>["body", "query", "params", "headers"]) {
+      final dynamic item = validation[section];
+      if (item is Map) {
+        final dynamic msg = item["message"];
+        if (msg is String && msg.trim().isNotEmpty) return msg;
+      }
+    }
+    return null;
   }
 
   static HttpResponse<T> decodeResponse<T>(

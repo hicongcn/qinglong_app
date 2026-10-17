@@ -98,18 +98,6 @@ class _TaskDetailPageState extends ConsumerState<TaskDetailPage> with LazyLoadSt
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TaskDetailCell(
-                        title: "名称",
-                        desc: widget.taskBean.name ?? "",
-                      ),
-                      TaskDetailCell(
-                        title: "ID",
-                        desc: widget.taskBean.sId ?? "",
-                      ),
-                      TaskDetailCell(
-                        title: "任务",
-                        desc: widget.taskBean.command ?? "",
-                      ),
                       Visibility(
                         visible: widget.taskBean.command != null && widget.taskBean.command!.isNotEmpty && widget.taskBean.command!.startsWith("task "),
                         child: TaskDetailCell(
@@ -144,12 +132,6 @@ class _TaskDetailPageState extends ConsumerState<TaskDetailPage> with LazyLoadSt
                         ),
                       ),
                       TaskDetailCell(
-                        title: "创建时间",
-                        desc: widget.taskBean.created == null
-                            ? Utils.formatTime2(widget.taskBean.createdAt)
-                            : Utils.formatMessageTime(widget.taskBean.created ?? 0),
-                      ),
-                      TaskDetailCell(
                         title: "更新时间",
                         desc: widget.taskBean.updatedAt == null
                             ? Utils.formatGMTTime(widget.taskBean.timestamp ?? "")
@@ -166,12 +148,9 @@ class _TaskDetailPageState extends ConsumerState<TaskDetailPage> with LazyLoadSt
                         );
                       }),
                       TaskDetailCell(
-                        title: "最后运行时间",
-                        desc: Utils.formatMessageTime(widget.taskBean.lastExecutionTime ?? 0),
-                      ),
-                      TaskDetailCell(
-                        title: "最后运行时长",
-                        desc: widget.taskBean.lastRunningTime == null ? "-" : "${widget.taskBean.lastRunningTime ?? "-"}秒",
+                        title: "最后运行",
+                        desc: "${Utils.formatMessageTime(widget.taskBean.lastExecutionTime ?? 0)}"
+                            "${widget.taskBean.lastRunningTime == null ? "" : " · ${widget.taskBean.lastRunningTime} 秒"}",
                       ),
                       TaskDetailCell(
                         title: "最新日志",

@@ -45,6 +45,9 @@ void main() {
   /// POST/PUT /api/crons 的请求体（用于断言 allow_multiple_instances 有没有带上）
   late List<String> cronBodies;
 
+  /// 让 POST/PUT /api/crons 返回 celebrate 的校验失败（400 + validation）
+  bool cronSaveInvalid = false;
+
   setUpAll(() async {
     // flutter_test 默认拦截网络（一律返回 400），这里放行，改用本机 mock 服务
     HttpOverrides.global = null;
@@ -223,6 +226,26 @@ void main() {
         case "/api/crons":
           if (req.method != "GET") {
             cronBodies.add(body);
+            if (cronSaveInvalid) {
+              // 复刻 celebrate 的真实返回：顶层 message 是英文，
+              // 具体原因在 validation.body.message 里
+              _sendRaw(
+                req,
+                400,
+                jsonEncode({
+                  "status": 400,
+                  "message": "Validation failed",
+                  "validation": {
+                    "body": {
+                      "source": "body",
+                      "keys": ["schedule"],
+                      "message": '"schedule" 无效的定时规则',
+                    }
+                  },
+                }),
+              );
+              return;
+            }
             _send(req, {
               "code": 200,
               "message": req.method == "POST" ? "创建成功" : "更新成功",
@@ -286,6 +309,7 @@ void main() {
     restoreBodies = <String>[];
     restoreMode = "ok";
     cronBodies = <String>[];
+    cronSaveInvalid = false;
     final getIt = GetIt.instance;
     // get_it 7.x 的 reset() 是异步的（要等 dispose 完成才真正清空），
     // 不 await 会把下面刚注册的实例又清掉。
@@ -647,6 +671,18 @@ void main() {
     await api.crons2_13_09();
 
     expect(requests.single.contains("queryString"), isFalse);
+  });
+
+  test("保存任务被校验拒绝时，要把具体原因带出来（不是英文 Validation failed）", () async {
+    cronSaveInvalid = true;
+    final api = Api(0);
+    final res = await api.addTask("demo", "task demo.js", "50 9,14,19,23 * * *");
+
+    expect(res.success, isFalse);
+    expect(res.message, contains("无效的定时规则"),
+        reason: "celebrate 把原因放在 validation.body.message，"
+            "客户端必须取它，否则用户只能看到英文的 Validation failed");
+    expect(res.message, isNot("Validation failed"));
   });
 
   test("任务列表：解开 data.data 双层包装，且只传 searchValue", () async {

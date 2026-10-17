@@ -217,7 +217,7 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
                               height: 5,
                             ),
                             Text(
-                              "关闭时（服务端默认），若任务到点触发而上一次还在运行，服务端会先终止旧实例再启动新的——脚本耗时超过定时间隔时就会一直被打断。这种情况把它打开。",
+                              "关闭时，到点若上一次还在跑会被终止。脚本耗时超过定时间隔时打开。",
                               style: TextStyle(
                                 fontSize: 12,
                                 height: 1.5,
@@ -255,9 +255,7 @@ class _AddTaskPageState extends ConsumerState<AddTaskPage> with LazyLoadState<Ad
                     height: 5,
                   ),
                   Text(
-                    "同一个任务可以挂多条时间规则，主规则之外的时间点写在这里。"
-                    "服务端的定时规则校验会把「3 个以上、等差且排到边界」的逗号列表误判为无效，"
-                    "这种情况拆成多条规则就能绕过。",
+                    "一个任务可挂多条时间规则，用来补主规则之外的时间点。",
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.5,
