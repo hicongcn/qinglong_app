@@ -12,6 +12,7 @@ import 'package:qinglong_app/module/others/login_log/login_log_bean.dart';
 import 'package:qinglong_app/module/others/scripts/script_bean.dart';
 import 'package:qinglong_app/module/others/scripts/script_history_bean.dart';
 import 'package:qinglong_app/module/others/task_log/task_log_bean.dart';
+import 'package:qinglong_app/module/task/task_view_bean.dart';
 import 'package:qinglong_app/module/others/update/check_update_bean.dart';
 import 'package:qinglong_app/module/task/TaskBean2.dart';
 import 'package:qinglong_app/module/task/task_bean.dart';
@@ -58,6 +59,10 @@ class JsonConversion$Json {
 
     if (type == (ScriptHistoryDetailBean).toString()) {
       return ScriptHistoryDetailBean.jsonConversion(json) as M;
+    }
+
+    if (type == (TaskViewBean).toString()) {
+      return TaskViewBean.jsonConversion(json) as M;
     }
 
     if (type == (DependencyBean).toString()) {
@@ -137,6 +142,10 @@ class JsonConversion$Json {
 
     if (<TaskLogBean>[] is M) {
       return data.map<TaskLogBean>((e) => TaskLogBean.jsonConversion(e)).toList() as M;
+    }
+
+    if (<TaskViewBean>[] is M) {
+      return data.map<TaskViewBean>((e) => TaskViewBean.jsonConversion(e)).toList() as M;
     }
 
     if (<CheckUpdateBean>[] is M) {

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
@@ -7,6 +8,7 @@ import 'package:qinglong_app/base/single_account_page.dart';
 import 'package:qinglong_app/module/home/home_page.dart';
 import 'package:qinglong_app/module/home/system_bean.dart';
 import 'package:qinglong_app/module/task/task_bean.dart';
+import 'package:qinglong_app/module/task/task_view_bean.dart';
 import 'package:qinglong_app/utils/extension.dart';
 import 'package:qinglong_app/utils/utils.dart';
 
@@ -29,6 +31,42 @@ class TaskViewModel extends BaseViewModel {
 
   List<TaskBean> list = [];
   List<TaskBean> running = [];
+
+  /// 任务视图：保存下来的筛选/排序方案（服务端 `crons/views`）。
+  /// 面板里新建，客户端负责切换；系统只预置「全部任务」一个。
+  List<TaskViewBean> views = [];
+
+  /// 当前选中的视图；null 表示「全部任务」（不带 queryString）
+  TaskViewBean? currentView;
+
+  /// 拉取视图列表（忽略被停用的视图）
+  Future<void> loadViews(BuildContext context) async {
+    final HttpResponse<List<TaskViewBean>> temp =
+        await SingleAccountPageState.ofApi(context).taskViews();
+    if (temp.success && temp.bean != null) {
+      views = temp.bean!.where((v) => v.isDisabled != 1).toList();
+      notifyListeners();
+    }
+    // 拉不到视图不影响任务列表，静默失败
+  }
+
+  /// 当前视图对应的 queryString；null = 不过滤（「全部任务」）
+  String? currentViewQuery() {
+    final TaskViewBean? v = currentView;
+    if (v == null || !v.hasRules) return null;
+    return jsonEncode({
+      "filters": v.filters ?? <dynamic>[],
+      "sorts": v.sorts ?? <dynamic>[],
+      "filterRelation": v.filterRelation ?? "and",
+    });
+  }
+
+  /// 切换视图并重新拉任务
+  Future<void> switchView(BuildContext context, TaskViewBean? view) async {
+    currentView = view;
+    notifyListeners();
+    await loadData(context, false);
+  }
   List<TaskBean> neverRunning = [];
   List<TaskBean> notScripts = [];
   List<TaskBean> disabled = [];
@@ -45,7 +83,8 @@ class TaskViewModel extends BaseViewModel {
       loading(notify: true);
     }
 
-    var temp = await SingleAccountPageState.ofApi(context).crons2_13_09();
+    var temp = await SingleAccountPageState.ofApi(context)
+        .crons2_13_09(queryString: currentViewQuery());
     if (temp.success && temp.bean != null) {
       list.clear();
       list.addAll(temp.bean?.data ?? []);

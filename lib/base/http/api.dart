@@ -13,6 +13,7 @@ import 'package:qinglong_app/module/others/scripts/script_history_bean.dart';
 import 'package:qinglong_app/module/others/task_log/task_log_bean.dart';
 import 'package:qinglong_app/module/others/update/check_update_bean.dart';
 import 'package:qinglong_app/module/task/intime_log/intime_log_chunk.dart';
+import 'package:qinglong_app/module/task/task_view_bean.dart';
 
 import '../../module/task/TaskBean2.dart';
 import '../ui/tree/models/script_data.dart';
@@ -109,12 +110,37 @@ class Api {
   }
 
   /// 任务列表：新版返回 `{data:{data:[...],total}}`，由 TaskBean2 解开双层包装
-  Future<HttpResponse<TaskBean2>> crons2_13_09() async {
+  /// 任务视图列表（`GET /api/crons/views`）。
+  ///
+  /// 系统只预置「全部任务」一个（`type=1`，没有筛选条件）；
+  /// 其余是用户在面板里自建的筛选/排序方案。
+  Future<HttpResponse<List<TaskViewBean>>> taskViews() async {
+    return await getIt<Http>(instanceName: index.toString())
+        .get<List<TaskViewBean>>(
+      getIt<Url>(instanceName: index.toString()).taskViews,
+      null,
+    );
+  }
+
+  /// 任务列表。
+  ///
+  /// [queryString] 来自任务视图：`{filters, sorts, filterRelation}` 的 JSON 串，
+  /// 服务端 `crontabs()` 里 `safeJSONParse(params.queryString)` 后交给
+  /// `formatViewQuery()` 解释。传 null 表示不过滤（等同「全部任务」）。
+  Future<HttpResponse<TaskBean2>> crons2_13_09({String? queryString}) async {
     // 注意：服务端读取的查询参数名是 searchValue，不是 searchText
     // （传 searchText 会被忽略 → 搜索失效、永远返回全部任务）
+    final Map<String, String?> query = {
+      "page": "1",
+      "size": "10000",
+      "searchValue": "",
+    };
+    if (queryString != null && queryString.isNotEmpty) {
+      query["queryString"] = queryString;
+    }
     return await getIt<Http>(instanceName: index.toString()).get<TaskBean2>(
       getIt<Url>(instanceName: index.toString()).tasks,
-      {"page": "1", "size": "10000", "searchValue": ""},
+      query,
     );
   }
 

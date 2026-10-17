@@ -197,6 +197,28 @@ void main() {
           _send(req, {"code": 200, "data": {"logRemoveFrequency": 15}});
           return;
 
+        // 任务视图（保存的筛选/排序方案）
+        case "/api/crons/views":
+          _send(req, {
+            "code": 200,
+            "data": [
+              {"id": 1, "name": "全部任务", "type": 1, "position": 500, "isDisabled": 0},
+              {
+                "id": 2,
+                "name": "淘宝",
+                "type": 2,
+                "position": 400,
+                "isDisabled": 0,
+                "filters": [
+                  {"property": "name", "operation": "Reg", "value": "淘宝"}
+                ],
+                "sorts": [],
+                "filterRelation": "and",
+              },
+            ],
+          });
+          return;
+
         // 任务：GET 返回双层包装的列表；POST/PUT 记录请求体（测多实例开关）
         case "/api/crons":
           if (req.method != "GET") {
@@ -580,6 +602,51 @@ void main() {
     final sent = jsonDecode(cronBodies.single) as Map<String, dynamic>;
     expect(sent["extra_schedules"], isEmpty,
         reason: "空数组表示清空全部额外规则；不传则服务端会沿用原值");
+  });
+
+  test("任务视图：解析 id/name，并区分系统视图与有筛选的视图", () async {
+    final api = Api(0);
+    final res = await api.taskViews();
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    expect(res.bean?.length, 2);
+
+    final all = res.bean!.firstWhere((v) => v.name == "全部任务");
+    expect(all.isSystem, isTrue, reason: "type=1 是系统预置");
+    expect(all.hasRules, isFalse, reason: "「全部任务」没有筛选条件");
+
+    final mine = res.bean!.firstWhere((v) => v.name == "淘宝");
+    expect(mine.isSystem, isFalse);
+    expect(mine.hasRules, isTrue);
+    expect(mine.filters?.length, 1);
+    expect(mine.filterRelation, "and");
+  });
+
+  test("任务列表：带视图 queryString 时原样透传（服务端自己解释筛选）", () async {
+    final api = Api(0);
+    final qs = jsonEncode({
+      "filters": [
+        {"property": "name", "operation": "Reg", "value": "淘宝"}
+      ],
+      "sorts": [],
+      "filterRelation": "and",
+    });
+    final res = await api.crons2_13_09(queryString: qs);
+
+    expect(res.success, isTrue, reason: res.message ?? "");
+    final String raw = requests.single;
+    final int q = raw.indexOf("?");
+    final Map<String, String> params =
+        Uri.splitQueryString(raw.substring(q + 1));
+    expect(params["queryString"], qs,
+        reason: "必须原封不动传给服务端，客户端不解构 filters");
+  });
+
+  test("任务列表：没有视图时不带 queryString", () async {
+    final api = Api(0);
+    await api.crons2_13_09();
+
+    expect(requests.single.contains("queryString"), isFalse);
   });
 
   test("任务列表：解开 data.data 双层包装，且只传 searchValue", () async {

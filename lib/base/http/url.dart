@@ -21,6 +21,9 @@ class Url {
 
   get tasks => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/crons" : "/api/crons";
 
+  /// 任务视图（保存的筛选/排序方案）。面板里可新建视图，客户端负责切换。
+  get taskViews => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/crons/views" : "/api/crons/views";
+
   get subscribes => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/subscriptions" : "/api/subscriptions";
 
   get notifcations => getIt<UserInfoViewModel>(instanceName: index.toString()).useSecretLogined ? "/open/user/notification" : "/api/user/notification";
