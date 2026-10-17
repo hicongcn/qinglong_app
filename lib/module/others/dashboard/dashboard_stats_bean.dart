@@ -73,10 +73,21 @@ class DashboardTopBean {
     return int.tryParse(v.toString()) ?? 0;
   }
 
-  /// 毫秒 → 「12.3s」，0/空显示「-」
-  String timeText(int? ms) {
+  /// 毫秒 → 人话。服务端 top-time 的 `avgTime` / `maxTime` 以及 overview 的
+  /// `avgTime` **都是毫秒**（面板那边也是 `/1000` 之后按秒显示的）。
+  /// 直接按秒解释会得到「60794 分 3 秒」这种鬼话，所以这里统一走 [formatMs]。
+  String timeText(int? ms) => formatMs(ms);
+
+  static String formatMs(int? ms) {
     if (ms == null || ms <= 0) return "-";
-    return "${(ms / 1000).toStringAsFixed(1)}s";
+    final double sec = ms / 1000.0;
+    if (sec < 60) return "${sec.toStringAsFixed(1)}s";
+    final int total = sec.round();
+    final int m = total ~/ 60;
+    final int s = total % 60;
+    if (m < 60) return "$m 分 $s 秒";
+    final int h = m ~/ 60;
+    return "$h 小时 ${m % 60} 分";
   }
 
   Map<String, dynamic> toJson() {

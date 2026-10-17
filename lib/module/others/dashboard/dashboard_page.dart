@@ -79,7 +79,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final ThemeColors c = ref.watch(themeProvider).themeColor;
 
     return Scaffold(
-      backgroundColor: c.settingBgColor(),
+      // ⚠️ 不能用 settingBgColor：浅色主题下它和卡片色（settingBordorColor）
+      // 都是纯白，卡片就完全看不出边界了。和「我的」页保持一致用 bg2Color。
+      backgroundColor: c.bg2Color(),
       appBar: QlAppBar(
         canBack: true,
         backCall: () => Navigator.of(context).pop(),
@@ -144,7 +146,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ],
       <Widget>[
         _stat(c, "成功率", "${d?.successRate ?? "0"}%", const Color(0xff089556)),
-        _stat(c, "平均耗时", _secText(d?.avgTime), c.titleColor()),
+        _stat(c, "平均耗时", DashboardTopBean.formatMs(d?.avgTime), c.titleColor()),
       ],
     ];
 
@@ -165,14 +167,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             .toList(),
       ),
     );
-  }
-
-  String _secText(int? seconds) {
-    if (seconds == null || seconds <= 0) return "-";
-    if (seconds < 60) return "${seconds}s";
-    final int m = seconds ~/ 60;
-    final int s = seconds % 60;
-    return "$m 分 $s 秒";
   }
 
   Widget _stat(ThemeColors c, String label, String value, Color valueColor) {

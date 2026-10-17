@@ -527,15 +527,17 @@ class OtherPageState extends ConsumerState<OtherPage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // png 图标自带内边距（视觉上偏小），字体图标没有；
+            // 所以两者给的盒子一样高，但 png 画得更大一点，看起来才一样粗。
             SizedBox(
-              height: 30,
+              height: 34,
               child: asset != null
                   ? ColorFiltered(
                       colorFilter: ColorFilter.mode(primary, BlendMode.srcIn),
                       child: Image.asset(
                         asset,
-                        width: 30,
-                        height: 30,
+                        width: 34,
+                        height: 34,
                         fit: BoxFit.contain,
                       ),
                     )

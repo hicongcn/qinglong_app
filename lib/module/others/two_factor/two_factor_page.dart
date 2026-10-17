@@ -168,12 +168,36 @@ class _TwoFactorPageState extends ConsumerState<TwoFactorPage> {
     );
   }
 
+  /// 整行宽的按钮。CupertinoButton 默认按内容宽度收缩，
+  /// 只给 color + padding 的话会变成一个贴着文字的小药丸（文字还会贴左边），
+  /// 所以统一用 SizedBox 撑满 + 居中文字。
+  Widget _fullWidthButton({
+    required String title,
+    required Color color,
+    required VoidCallback? onTap,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: CupertinoButton(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        borderRadius: BorderRadius.circular(10),
+        color: color,
+        onPressed: onTap,
+        child: Center(
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 16, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildIdle() {
-    return CupertinoButton(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+    return _fullWidthButton(
+      title: "启用两步验证",
       color: ref.watch(themeProvider).primaryColor,
-      onPressed: startEnable,
-      child: const Text("启用两步验证", style: TextStyle(fontSize: 15)),
+      onTap: startEnable,
     );
   }
 
@@ -190,11 +214,10 @@ class _TwoFactorPageState extends ConsumerState<TwoFactorPage> {
           ],
         ),
         const SizedBox(height: 16),
-        CupertinoButton(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        _fullWidthButton(
+          title: "关闭两步验证",
           color: const Color(0xffFB5858),
-          onPressed: deactivate,
-          child: const Text("关闭两步验证", style: TextStyle(fontSize: 15)),
+          onTap: deactivate,
         ),
       ],
     );
@@ -256,12 +279,10 @@ class _TwoFactorPageState extends ConsumerState<TwoFactorPage> {
           style: TextStyle(fontSize: 11, height: 1.5, color: themeColor.hintColor()),
         ),
         const SizedBox(height: 16),
-        CupertinoButton(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        _fullWidthButton(
+          title: submitting ? "验证中..." : "确认启用",
           color: ref.watch(themeProvider).primaryColor,
-          onPressed: submitting ? null : confirmEnable,
-          child: Text(submitting ? "验证中..." : "确认启用",
-              style: const TextStyle(fontSize: 15)),
+          onTap: submitting ? null : confirmEnable,
         ),
       ],
     );

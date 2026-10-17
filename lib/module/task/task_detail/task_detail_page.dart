@@ -316,7 +316,7 @@ class _TaskDetailPageState extends ConsumerState<TaskDetailPage> with LazyLoadSt
                 context,
                 [
                   CupertinoSheer(
-                    title: widget.taskBean.status! == 1 ? "运行" : "停止运行",
+                    title: widget.taskBean.status == 1 ? "运行" : "停止运行",
                     onTap: () async {
                       if (widget.taskBean.status! == 1) {
                         await startCron(context, ref);
@@ -339,23 +339,6 @@ class _TaskDetailPageState extends ConsumerState<TaskDetailPage> with LazyLoadSt
                       );
                     },
                   ),
-                  addDivider(),
-                  // startCron / stopCron 本来就写好了，但一直没有入口。
-                  // 运行中给「停止」，其余给「运行」。
-                  if (widget.taskBean.status == 0)
-                    CupertinoSheer(
-                      title: "停止",
-                      onTap: () {
-                        stopCron(context, ref);
-                      },
-                    )
-                  else
-                    CupertinoSheer(
-                      title: "运行",
-                      onTap: () {
-                        startCron(context, ref);
-                      },
-                    ),
                   addDivider(),
                   CupertinoSheer(
                     title: widget.taskBean.isDisabled! == 0 ? "禁用" : "启用",

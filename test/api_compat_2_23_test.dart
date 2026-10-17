@@ -22,6 +22,7 @@ import 'package:qinglong_app/base/http/url.dart';
 import 'package:qinglong_app/base/multi_account_userinfo_viewmodel.dart';
 import 'package:qinglong_app/base/userinfo_viewmodel.dart';
 import 'package:qinglong_app/module/home/system_bean.dart';
+import 'package:qinglong_app/module/others/dashboard/dashboard_stats_bean.dart';
 
 const String _instance = "0";
 const String _serverVersion = "2.23.0";
@@ -544,6 +545,16 @@ void main() {
     expect(system.bean?.memUsagePercent, "61.5");
     expect(system.bean?.memPercentValue, closeTo(0.615, 0.001));
     expect(system.bean?.uptimeText, "1 天 1 小时");
+  });
+
+  test("耗时格式化：服务端给的是毫秒，别按秒解释", () {
+    // 之前按秒处理 → 界面上出现「60794 分 3 秒」这种鬼话
+    expect(DashboardTopBean.formatMs(60794), "1 分 1 秒");
+    expect(DashboardTopBean.formatMs(12300), "12.3s");
+    expect(DashboardTopBean.formatMs(14183200), "3 小时 56 分");
+    expect(DashboardTopBean.formatMs(39078000), "10 小时 51 分");
+    expect(DashboardTopBean.formatMs(0), "-");
+    expect(DashboardTopBean.formatMs(null), "-");
   });
 
   test("环境变量：批量改名走 PUT /api/envs/name，字段 ids/name", () async {
