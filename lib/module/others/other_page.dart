@@ -249,7 +249,7 @@ class OtherPageState extends ConsumerState<OtherPage>
                 //   仪表盘 → 订阅管理 → 脚本管理 → 依赖管理 → 日志 → 系统设置
                 // ⛔ 服务端功能不许放进 App 板块，反之亦然（用户明确要求过）。
                 // ⛔ 板块名是「青龙设置」（用户指定）。
-                _gridCard("青龙设置", <Widget>[
+                _gridCard(null, <Widget>[ // 青龙侧（服务端能力）
                   _cell("仪表盘",
                       icon: CupertinoIcons.chart_bar_alt_fill,
                       onTap: () => Navigator.of(context).push(
@@ -307,7 +307,7 @@ class OtherPageState extends ConsumerState<OtherPage>
                 const SizedBox(
                   height: 12,
                 ),
-                _gridCard("App 设置", <Widget>[
+                _gridCard(null, <Widget>[ // App 侧（客户端能力）
                   // 扫描依赖跑的是服务端的 dependencies 接口，但它是「检查本机脚本缺哪些包」的
                   // 客户端动作，按用户要求放在 App 侧。
                   _cell("扫描依赖",
@@ -465,7 +465,9 @@ class OtherPageState extends ConsumerState<OtherPage>
   }
 
   /// 板块卡片：小标题 + 四列网格。
-  Widget _gridCard(String title, List<Widget> cells) {
+  /// 板块卡片。[title] 传 null 就不画标题 —— 用户觉得两个板块名和整体版式不和谐，
+  /// 要求去掉。功能区隔靠图标语义和排序（前 12 个是青龙侧，后 7 个是 App 侧）。
+  Widget _gridCard(String? title, List<Widget> cells) {
     final ThemeColors c = ref.watch(themeProvider).themeColor;
     final List<Widget> rows = <Widget>[];
     for (int i = 0; i < cells.length; i += 4) {
@@ -474,7 +476,7 @@ class OtherPageState extends ConsumerState<OtherPage>
     }
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 15),
-      padding: const EdgeInsets.fromLTRB(6, 14, 6, 10),
+      padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
       decoration: BoxDecoration(
         color: c.settingBordorColor(),
         borderRadius: BorderRadius.circular(10),
@@ -482,13 +484,15 @@ class OtherPageState extends ConsumerState<OtherPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: TextStyle(fontSize: 13, color: c.descColor()),
-          ),
-          const SizedBox(
-            height: 2,
-          ),
+          if (title != null && title.isNotEmpty) ...[
+            Text(
+              title,
+              style: TextStyle(fontSize: 13, color: c.descColor()),
+            ),
+            const SizedBox(
+              height: 2,
+            ),
+          ],
           ...rows,
         ],
       ),

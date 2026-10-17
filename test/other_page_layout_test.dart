@@ -14,10 +14,16 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final File source = File('lib/module/others/other_page.dart');
 
-  /// 取出 `_gridCard("标题", <Widget>[ ... ])` 里的条目名
-  List<String> cellsOf(String src, String title) {
-    final int start = src.indexOf('_gridCard("$title"');
-    expect(start, greaterThanOrEqualTo(0), reason: "找不到板块「$title」");
+  /// 取出第 [order] 个 `_gridCard(...)` 块里的条目名。
+  ///
+  /// 板块标题已被用户要求去掉（`_gridCard(null, ...)`），所以只能按顺序取：
+  /// 第 0 块 = 青龙侧，第 1 块 = App 侧。
+  List<String> cellsAt(String src, int order) {
+    int start = -1;
+    for (int i = 0; i <= order; i++) {
+      start = src.indexOf('_gridCard(', start + 1);
+    }
+    expect(start, greaterThanOrEqualTo(0), reason: "找不到第 ${order + 1} 个板块");
     final int end = src.indexOf(']),', start);
     expect(end, greaterThan(start));
     return RegExp(r'_cell\("([^"]+)"')
@@ -26,19 +32,17 @@ void main() {
         .toList();
   }
 
-  test('板块只有两个：青龙设置 与 App 设置', () {
+  test('板块只有两个，且按需求不显示标题', () {
     final String src = source.readAsStringSync();
-    final List<String> cards = RegExp(r'_gridCard\(\s*"([^"]+)"')
-        .allMatches(src)
-        .map((m) => m.group(1)!)
-        .toList();
-    expect(cards, <String>["青龙设置", "App 设置"]);
+    expect(RegExp(r'_gridCard\(null').allMatches(src).length, 2);
+    expect(RegExp(r'_gridCard\(\s*"').hasMatch(src), isFalse,
+        reason: "板块标题已按用户要求去掉，不要再加回来");
   });
 
   test('青龙设置：顺序对齐面板菜单（仪表盘→订阅→脚本→依赖→日志→系统设置）', () {
     final String src = source.readAsStringSync();
     expect(
-      cellsOf(src, "青龙设置"),
+      cellsAt(src, 0),
       <String>[
         "仪表盘",
         "订阅管理",
@@ -59,7 +63,7 @@ void main() {
   test('App 设置：只放客户端功能，扫描依赖在 App 侧', () {
     final String src = source.readAsStringSync();
     expect(
-      cellsOf(src, "App 设置"),
+      cellsAt(src, 1),
       <String>[
         "扫描依赖",
         "多账号数",
@@ -74,8 +78,8 @@ void main() {
 
   test('青龙 12 个（三行）、App 7 个，每行四列', () {
     final String src = source.readAsStringSync();
-    expect(cellsOf(src, "青龙设置").length, 12);
-    expect(cellsOf(src, "App 设置").length, 7);
+    expect(cellsAt(src, 0).length, 12);
+    expect(cellsAt(src, 1).length, 7);
     expect(RegExp(r'for \(int i = 0; i < 4; i\+\+\)').hasMatch(src), isTrue);
     expect(RegExp(r'Expanded\(\s*flex: 2').hasMatch(src), isFalse,
         reason: "不要再用 Expanded(flex:2) 手工排网格，列宽会不一致");
@@ -89,6 +93,8 @@ void main() {
       "工具",
       "多帐号设置",
       "面板\"",
+      "青龙设置",
+      "App 设置",
       "应用设置",
       "日志设置",
     ]) {
